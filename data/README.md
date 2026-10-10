@@ -52,3 +52,21 @@ food services 258, Unit Clerk 254). The human rows were kept as authored rather 
   `Room Environment/ Cleaning` -> `Room Environment / Cleaning`, 2x `housekeeping & facilities` ->
   `Housekeeping & facilities`, 2x `nurse` -> `Nurse`, and one blank urgency (id 8, a menu request
   from a patient going to chest surgery) filled with 3.
+
+## Checking the labels with a second model
+
+`AUDIT_PROMPT.md` is a self-contained prompt: select the whole file, copy it, paste it into a
+different model, then paste the rows you want checked underneath. Nothing to edit first.
+
+- Chunk the file at ~100 rows per paste (`patient_requests_all.csv` has 1067, so ~11 pastes). For a
+  quick read, take about 20 rows from each category instead.
+- Paste it with **every column**, labels included. The checker is verifying the existing labels, not
+  producing new ones.
+- Save each reply as a CSV and treat it as a findings list, not gospel: one line per suspected
+  problem, with a reason. Nothing is applied automatically - read the finding, decide, then edit.
+- Worth using a different model family from the one that wrote the labels, since the same family
+  shares its blind spots.
+- Showing the checker the labels does cost some independence, which is why the prompt tells it to
+  decide each label from the sentence before comparing, and to stay silent about rows it agrees
+  with. If a chunk comes back with zero findings, that is a clean chunk - not the checker being
+  lazy.

@@ -1,63 +1,32 @@
-# Label-check prompt (hand this to a second model)
+You are checking an existing dataset of hospital patient requests for label errors and sentence
+defects. You are a reviewer, not an author: the dataset already exists and your job is to find what
+is wrong with what is there. Do not write new requests, do not rewrite the patient's words, do not
+produce a corrected dataset.
 
-**What this is.** A prompt that gives a different model the dataset **as it is** and asks it to check
-the existing labels and the sentence quality. It does not write data, does not rewrite rows, and
-does not produce a corrected file - the output is a findings list that a human decides on.
-
-**Why a second model.** Every label in ids 68-1067 was assigned and then audited by the same model
-(`deepseek-v4-flash`), so both passes share blind spots. A different model family is the cheapest
-independent check available.
-
-**One caveat, stated up front.** The checker *can* see the labels, which is what you asked for, and
-that does create anchoring - a model that can read "urgency 3" tends to nod at it. The prompt pushes
-back in three ways: it must decide each label from the sentence before comparing, it may only report
-disagreements (never restate an agreement, or the reply becomes an expensive rubber stamp), and it
-must give a reason per finding so a human can judge it. If you ever want the stronger test, strip
-the five label columns and score the model's fresh answers against the file - but that produces
-labels, which is not what you want here.
-
-## How to run it
-
-1. Chunk the file at ~100 rows per call (`data/patient_requests_all.csv` has 1067, so ~11 calls).
-   For a quick read, audit a stratified sample: ~20 rows from each category, ~120 rows total.
-2. Paste the prompt below, then attach the chunk as CSV **with all columns**.
-3. Save the replies as `audit/findings_001.csv`, `findings_002.csv`, and concatenate them.
-4. Read the findings, decide on each one yourself, and only then edit the dataset. Nothing the
-   checker returns is applied automatically.
-
-## The prompt (copy everything from here to the end)
-
-You are checking a synthetic dataset of hospital patient requests before it is used to train a
-routing model. You are a reviewer, not an author: your job is to find what is wrong with what is
-already there. Do not write new requests, do not rewrite the patient's words, do not produce a
-corrected dataset.
-
-### What you receive
-
-A CSV with these columns:
+I will give you a CSV with these columns:
 
 - `request_id`
 - `patient_context` - a fact from the patient's chart, or empty: a diagnosis, a precaution, a
-  procedure, a device, a diet order, or a lasting functional limitation (poor grip, hard of
-  hearing, cannot bend). It should never be a live observation ("is not breathing"), a care
-  directive ("needs the light kept out"), a future expectation, or general medical knowledge. Context
-  is what makes the *same* sentence route or escalate differently, so weigh it heavily.
+  procedure, a device, a diet order, or a lasting functional limitation (poor grip, hard of hearing,
+  cannot bend). It should never be a live observation ("is not breathing"), a care directive ("needs
+  the light kept out"), a future expectation, or general medical knowledge. Context is what makes the
+  same sentence route or escalate differently, so weigh it heavily.
 - `patient_request` - what the patient said out loud. This system replaces the call bell: the patient
-  speaks; there are no buttons, screens or typing. A request that mentions pressing a button,
-  pulling a cord or using a buzzer is a defect.
+  speaks; there are no buttons, screens or typing. A request that mentions pressing a button, pulling
+  a cord or using a buzzer is a defect.
 - `category`, `destination department`, `urgency`, `clinical_review`, `more_info_needed` - the
   existing labels you are checking.
 
 Real speech contains disfluency, hedges and unfinished sentences. None of that is a defect.
 
-### How to check a row
+## How to check each row
 
-For each row, decide from the sentence and the chart fact what the labels *should* be - then compare
-with what the file says. Do not read the existing label first and look for a reason to agree with
-it. Do not report rows where you agree; agreement is silence, not a finding. Only disagreements and
-defects go in your output.
+Decide from the sentence and the chart fact what the labels should be, then compare with what the
+file says. Do not read the existing label first and look for a reason to agree with it. Do not
+report rows where you agree - agreement is silence, not a finding. Only disagreements and defects go
+in your output.
 
-### The rules you are checking against
+## The rules you are checking against
 
 **Category** is one of:
 
@@ -69,11 +38,11 @@ defects go in your output.
   fan, belongings and clothing.
 - `Urgent Clinical / Pain` - a clinical problem stated as the request: pain, bleeding, breathing, a
   wound, a line, a device the patient's body is reacting to.
-- `Unknown` - no routable ask: calling out with no words, a rant that names nothing, blank or
-  garbled speech, a sentence aimed at the wrong person.
+- `Unknown` - no routable ask: calling out with no words, a rant that names nothing, blank or garbled
+  speech, a sentence aimed at the wrong person.
 
 **Destination department** is one of `food services`, `Nurse`, `Housekeeping & facilities`,
-`Unit Clerk / IT Maintenance`, with these overrides, which are the whole point of the dataset:
+`Unit Clerk / IT Maintenance`:
 
 - `food services` - ordinary food and drink.
 - `Housekeeping & facilities` - cleaning, bedding, temperature, curtains, spills, supplies (toilet
@@ -82,12 +51,13 @@ defects go in your output.
   the phone, the television, a leaking tap.
 - `Nurse` - anything a clinician must act on, and every request governed by a clinical rule.
 
-Overrides that beat the category:
+Overrides that beat the category - these are the whole point of the dataset, so flag every row that
+gets one wrong:
 
 - A **clinical rule beats the category**: a diet order, an NPO ("nothing by mouth") question, an
-  allergy question, a swallowing or choking problem, insulin/meal-timing, a protein restriction or
-  low-sugar order, a pre-op fasting instruction - all route to `Nurse` even though they sound like
-  catering. If a patient asks *whether they may eat*, that is clinical, not a menu question.
+  allergy question, a swallowing or choking problem, insulin or meal-timing, a protein restriction, a
+  low-sugar order, a pre-op fasting instruction - all route to `Nurse` even when they sound like
+  catering. If a patient asks whether they may eat, that is clinical, not a menu question.
 - A **device or line problem** - catheter tugging, an IV or oxygen line caught on a rail, a drain, a
   dressing that has come loose - routes to `Nurse`, not to maintenance, even when the words describe
   an object.
@@ -115,12 +85,12 @@ Overrides that beat the category:
 - **10** immediate threat where speaking is barely possible - crushing chest pain, cannot breathe,
   choking, unresponsive. A fluent full sentence is rarely a 10.
 
-Rules that override a first impression - flag any row that breaks them:
+Rules that override a first impression - flag every row that breaks them:
 
 - **Tone is not severity.** An angry or loud sentence about something minor is still minor; a calm,
   apologetic sentence about something serious is still serious. "Sorry to make a fuss, I can't stop
-  shivering" is not a 3. "I want my tea this instant" is not urgent. Urgency that tracks the
-  loudness of the words rather than the content is a defect.
+  shivering" is not a 3. "I want my tea this instant" is not urgent. Urgency that tracks the loudness
+  of the words rather than the content is a defect.
 - **A quantified report is a finding.** "10 out of 10 pain" with nothing in the chart to soften it is
   at least a 7 and `clinical_review` is TRUE.
 - **Context moves urgency in both directions.** The same sentence is worse for a patient with a
@@ -135,15 +105,15 @@ a swallowing problem, an allergy question, an NPO or diet-order question. FALSE 
 supply, housekeeping or equipment request. Both directions are defects: TRUE on a plain request, and
 FALSE on something a clinician must see.
 
-**`more_info_needed`** should be TRUE when the dashboard operator must **ring the room** because the
+**`more_info_needed`** should be TRUE when the dashboard operator must ring the room because the
 request has no actionable ask or names no target ("something is wrong...", "that thing keeps going
 off", blank or garbled speech). FALSE for anything dispatchable, however vague the wording - if there
 is a clear target, someone can be sent without asking first. A clinically urgent request is never
 "ring first": if the patient needs a nurse now, this is FALSE.
 
-### Also check the sentences themselves
+## Also check the sentences themselves
 
-Report, in the same findings list, any row where:
+Report any row where:
 
 - the context is a live observation, a care directive, a future expectation, or general knowledge
   rather than a filed chart fact;
@@ -154,7 +124,7 @@ Report, in the same findings list, any row where:
 - the request and the context contradict each other - for example a context that would make the
   request impossible, or a context that plainly does not explain the label.
 
-### What to output
+## What to output
 
 A CSV findings list only, no prose, one line per problem:
 
@@ -178,5 +148,7 @@ Append at the very end, as comment lines starting with `#`, exactly these three 
 # fields_flagged: category <n>, destination department <n>, urgency <n>, clinical_review <n>, more_info_needed <n>, text <n>
 ```
 
-Flag what is wrong; do not fix the dataset. Do not output rows you agree with. If a chunk is clean,
+Flag what is wrong; do not fix the dataset. Do not output rows you agree with. If the chunk is clean,
 your entire reply is those three comment lines.
+
+Here are the rows to check:
