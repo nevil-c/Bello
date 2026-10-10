@@ -1,0 +1,360 @@
+request_id,field,old,new,reason
+1,category,Room Environment / Cleaning,Toileting,bathroom cleanliness is Toileting
+1,urgency,1,2,dirty bathroom is minor not zero impact
+2,urgency,6,2,plain temperature comfort request
+2,clinical_review,TRUE,FALSE,no symptom or context
+2,more_info_needed,TRUE,FALSE,clear target (temperature)
+3,destination department,Nurse,food services,ordinary food request
+3,urgency,6,3,ordinary hunger
+3,more_info_needed,TRUE,FALSE,clear ask
+4,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling not supplies
+4,urgency,8,4,routine toilet need
+6,patient_context,A person who has surgery and cant move by himself,Patient had surgery and cannot reposition without help,context rewritten as a chart fact
+7,urgency,1,2,broken AC has comfort impact
+8,clinical_review,FALSE,TRUE,pre-op eating question is clinical
+8,more_info_needed,TRUE,FALSE,clear ask
+14,urgency,7,5,missed dose is not a serious emergency
+14,clinical_review,FALSE,TRUE,medication issue clinician must see
+14,more_info_needed,TRUE,FALSE,clear target (medicine)
+15,urgency,3,4,meal that never came
+15,more_info_needed,TRUE,FALSE,clear target (breakfast)
+16,clinical_review,TRUE,FALSE,blank speech names no symptom
+19,more_info_needed,TRUE,FALSE,clear target (IV line)
+19,patient_request,My IV line stopped working or is slow,My IV line stopped working,template/unnatural wording cleaned
+22,destination department,food services,Nurse,post-op eating is governed by diet progression
+22,clinical_review,FALSE,TRUE,post-op eating question
+22,more_info_needed,TRUE,FALSE,clear ask
+23,clinical_review,FALSE,TRUE,bleeding wound
+23,more_info_needed,TRUE,FALSE,clinically urgent is never ring-first
+24,more_info_needed,TRUE,FALSE,urgency-9 respiratory patient cannot be ring-first
+24,patient_context,"A person has respiratory issues, they are connected to a ventilator or a oxygen tubing",Patient is on a ventilator,context rewritten as a chart fact
+25,patient_context,"A person has respiratory issues, they are connected to a ventilator or a oxygen tubing",Patient has a chronic respiratory condition and is on supplemental oxygen,context rewritten as a chart fact
+28,destination department,Housekeeping & facilities,Nurse,fresh knee replacement with walker on wet floor is fall risk (cf. 328)
+28,clinical_review,FALSE,TRUE,fall risk
+31,urgency,2,4,food sent to NPO pre-op patient cancels surgery
+35,clinical_review,FALSE,TRUE,follows from text/context fix
+37,urgency,6,7,chest pressure is significant without history
+44,urgency,5,7,10/10 despite recent bolus means uncontrolled pain
+45,clinical_review,FALSE,TRUE,patient reports feeling unwell
+50,urgency,9,4,leg numbness is expected two hours after spinal anesthesia
+53,urgency,1,2,water jug is a minor need; tone not severity
+65,urgency,7,4,patient reports usual pain and asks for nothing
+67,clinical_review,FALSE,TRUE,pain report is a symptom
+70,urgency,5,3,tray collection is next-round
+71,destination department,Nurse,food services,meal timing complaint with no clinical rule
+71,clinical_review,TRUE,FALSE,plain meal complaint
+76,urgency,5,6,nothing to eat all day
+81,destination department,Nurse,food services,NPO is over; early dinner is a catering complaint
+81,clinical_review,TRUE,FALSE,context does not make early dinner clinical
+105,category,Unknown,Dietary / Refreshment,names food (cf. 60)
+105,destination department,Nurse,food services,food complaint
+110,urgency,4,2,portion size is minor
+112,destination department,food services,Nurse,asking what they may eat is clinical
+112,clinical_review,FALSE,TRUE,diet permission question
+112,patient_request,It's probably nothing I think I'm not sure what I'm allowed,It's probably nothing but I'm not sure what I'm allowed to eat,template/unnatural wording cleaned
+112,more_info_needed,TRUE,FALSE,follows from text/context fix
+114,urgency,6,2,drink temperature preference
+127,destination department,food services,Nurse,asking what they may eat is clinical
+127,clinical_review,FALSE,TRUE,diet permission question
+127,more_info_needed,TRUE,FALSE,target (diet) is clear
+130,urgency,6,3,thirst comfort request
+130,patient_request,I'm so thirsty I think I can't get to sleep,I'm so thirsty I can't get to sleep,template/unnatural wording cleaned
+131,urgency,6,3,hunger comfort request
+131,patient_request,I keep waking up hungry and I kind of can't rest,I keep waking up hungry and I can't rest,template/unnatural wording cleaned
+132,urgency,6,4,needs water soon not significant risk
+133,patient_context,Patient has not eaten since yesterday evening,Patient has documented poor oral intake,context rewritten as a chart fact
+135,patient_context,Patient last ate more than eighteen hours ago,Patient is underweight with a low BMI on file,context rewritten as a chart fact
+136,urgency,3,4,meal never came
+137,patient_context,Patient slept through breakfast and lunch,Patient has a documented malnutrition risk,context rewritten as a chart fact
+139,urgency,6,2,condiment request
+140,urgency,3,4,meal never came
+153,more_info_needed,TRUE,FALSE,target (dinner) is clear
+164,more_info_needed,TRUE,FALSE,target (dinner) is clear
+172,row,Nobody has come back about the meal that never arrived,,deleted as duplicate
+174,destination department,food services,Nurse,diabetic standing snack order is a diet order
+174,clinical_review,FALSE,TRUE,diet order
+178,destination department,food services,Nurse,asking what they may eat is clinical
+178,clinical_review,FALSE,TRUE,diet permission question
+178,more_info_needed,TRUE,FALSE,target (diet) is clear
+186,urgency,2,5,nothing since breakfast (cf. 93)
+189,destination department,food services,Nurse,asking permission to have ice chips
+189,clinical_review,FALSE,TRUE,may-I-eat question
+190,urgency,1,5,waited over an hour (cf. 85)
+195,urgency,4,2,preference for next time
+196,urgency,4,2,portion preference
+202,destination department,food services,Nurse,complaint against sodium diet order
+202,clinical_review,FALSE,TRUE,diet order
+207,destination department,food services,Nurse,symptom from prescribed supplement
+216,destination department,food services,Nurse,outside food after gastric bypass is a may-I-eat question
+216,clinical_review,FALSE,TRUE,diet permission question
+217,destination department,food services,Nurse,asking whether they may eat outside food
+217,clinical_review,FALSE,TRUE,diet permission question
+219,destination department,food services,Nurse,asking what their diet allows
+219,clinical_review,FALSE,TRUE,diet order question
+220,destination department,food services,Nurse,documented allergy governs menu choice
+220,clinical_review,FALSE,TRUE,allergy
+233,urgency,2,4,half meal missing nobody returned (cf. 79)
+235,category,Dietary / Refreshment,Unknown,no routable ask
+235,destination department,food services,Nurse,Unknown routes to Nurse
+236,destination department,food services,Nurse,diet order question
+236,clinical_review,FALSE,TRUE,diet order question
+237,destination department,food services,Nurse,diet order question
+237,clinical_review,FALSE,TRUE,diet order question
+240,destination department,food services,Nurse,carb counting question implies diabetic diet
+240,clinical_review,FALSE,TRUE,diet order question
+242,destination department,food services,Nurse,carb counting implies insulin/diet management
+242,clinical_review,FALSE,TRUE,diet order question
+247,urgency,4,2,loud refusal of shake is still minor
+248,urgency,4,2,food swap request
+252,destination department,food services,Nurse,outside food permission
+252,clinical_review,FALSE,TRUE,may-I-eat question
+253,destination department,food services,Nurse,asking whether they may eat home food
+253,clinical_review,FALSE,TRUE,may-I-eat question
+254,destination department,food services,Nurse,asking whether they may eat home food
+254,clinical_review,FALSE,TRUE,may-I-eat question
+264,destination department,food services,Nurse,allergy question
+264,clinical_review,FALSE,TRUE,allergy question
+266,destination department,food services,Nurse,allergy question
+266,clinical_review,FALSE,TRUE,allergy question
+278,more_info_needed,TRUE,FALSE,target (tray) is clear
+281,urgency,4,2,missing condiment
+282,urgency,2,4,cannot reach food
+284,more_info_needed,TRUE,FALSE,menu question is dispatchable
+301,urgency,4,2,seconds request
+306,urgency,4,2,seconds request
+309,urgency,1,4,wrong cold tray means no meal (cf. 89)
+322,destination department,food services,Nurse,diet order question
+322,clinical_review,FALSE,TRUE,diet order question
+323,destination department,food services,Nurse,diet order question
+323,clinical_review,FALSE,TRUE,diet order question
+324,destination department,food services,Nurse,diet order question
+324,clinical_review,FALSE,TRUE,diet order question
+324,more_info_needed,TRUE,FALSE,target (diet) is clear
+326,destination department,food services,Nurse,being sent food they cannot eat is a diet order or allergy issue
+326,clinical_review,FALSE,TRUE,diet order question
+327,destination department,food services,Nurse,diet order question
+327,clinical_review,FALSE,TRUE,diet order question
+336,destination department,Housekeeping & facilities,Nurse,staining with a drain may be drain leakage
+338,patient_context,Patient has had a fever all night,Patient is being treated for sepsis,context rewritten as a chart fact
+346,destination department,Housekeeping & facilities,Nurse,incontinence accident
+346,patient_context,Patient has been incontinent of urine overnight,Patient has urinary incontinence,context rewritten as a chart fact
+348,patient_context,Patient had a high fever overnight,Patient has lymphoma with documented night sweats,context rewritten as a chart fact
+352,category,Room Environment / Cleaning,Toileting,bathroom cleanliness
+352,patient_context,Patient is being discharged this afternoon,Patient is on contact precautions for norovirus,context rewritten as a chart fact
+353,category,Room Environment / Cleaning,Toileting,bathroom cleanliness
+354,patient_context,Patient had neck surgery and needs extra support,Patient had neck surgery yesterday,context rewritten as a chart fact
+358,category,Room Environment / Cleaning,Toileting,bathroom cleanliness
+358,clinical_review,TRUE,FALSE,cleaning request no symptom
+359,category,Room Environment / Cleaning,Toileting,bathroom cleanliness
+364,category,Room Environment / Cleaning,Tech Support / Amenities,bed mechanism
+365,category,Room Environment / Cleaning,Tech Support / Amenities,socket fault
+366,category,Room Environment / Cleaning,Tech Support / Amenities,socket fault
+367,category,Room Environment / Cleaning,Tech Support / Amenities,bed mechanism
+368,urgency,1,2,extra pillow is 2-3; tone not severity
+370,category,Room Environment / Cleaning,Tech Support / Amenities,bed mechanism
+371,urgency,10,4,single word with no context
+371,clinical_review,TRUE,FALSE,names no symptom
+373,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+373,destination department,Nurse,Unit Clerk / IT Maintenance,belongings not clinical
+373,urgency,6,2,storage request
+373,clinical_review,TRUE,FALSE,no symptom
+375,row,,,deleted as duplicate
+377,urgency,4,2,slow drain is minor
+382,category,Room Environment / Cleaning,Tech Support / Amenities,bed mechanism
+392,category,Room Environment / Cleaning,Tech Support / Amenities,fan
+400,patient_context,Patient has a wound check scheduled shortly,Patient has an open abdominal wound,context rewritten as a chart fact
+408,patient_context,Patient had eye surgery today and needs the light kept low,Patient had eye surgery today,context rewritten as a chart fact
+412,patient_context,Patient is having a bedside procedure shortly,Patient has a documented anxiety disorder,context rewritten as a chart fact
+421,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+421,destination department,Nurse,Unit Clerk / IT Maintenance,belongings not clinical
+421,urgency,6,2,bag request
+421,clinical_review,TRUE,FALSE,no symptom
+438,destination department,Unit Clerk / IT Maintenance,Nurse,repositioning not equipment fault (cf. 393)
+438,urgency,1,3,sliding down needs repositioning
+441,destination department,Unit Clerk / IT Maintenance,Nurse,repositioning not equipment fault
+446,destination department,Nurse,Housekeeping & facilities,drain unrelated to a water spill
+446,clinical_review,TRUE,FALSE,spill only
+452,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+452,destination department,Nurse,Unit Clerk / IT Maintenance,belongings not clinical
+452,urgency,5,2,bag request
+452,clinical_review,TRUE,FALSE,no symptom
+454,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+454,destination department,Nurse,Unit Clerk / IT Maintenance,belongings not clinical
+454,urgency,5,2,storage request
+454,clinical_review,TRUE,FALSE,no symptom
+456,patient_context,Patient had a stroke and needs a quiet room to rest,Patient had a stroke two days ago,context rewritten as a chart fact
+460,patient_context,Patient is going home in the morning,Patient has documented insomnia,context rewritten as a chart fact
+462,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+462,patient_context,Patient has an occupational therapy session this afternoon,Patient has limited shoulder movement,context rewritten as a chart fact
+463,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+464,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+464,patient_context,Patient is expecting family to bring clothes this evening,Patient has a weak grip in both hands,context rewritten as a chart fact
+465,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+466,patient_context,Patient is scheduled for a procedure this afternoon,Patient uses a walker,context rewritten as a chart fact
+470,category,Room Environment / Cleaning,Tech Support / Amenities,bed mechanism
+477,urgency,5,3,routine turn (cf. 385)
+477,clinical_review,TRUE,FALSE,no context or symptom
+478,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+479,category,Room Environment / Cleaning,Tech Support / Amenities,fan
+480,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+483,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+484,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+486,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+488,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+488,urgency,4,2,belongings comfort
+488,patient_request,"I do not like to bother you, my suitcase is still kind of packed","I do not like to bother you, but my suitcase is still packed and I can't unpack it myself",template/unnatural wording cleaned
+490,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+492,more_info_needed,TRUE,FALSE,clear target (shade)
+494,destination department,Unit Clerk / IT Maintenance,Nurse,leaning drip stand threatens IV line
+494,clinical_review,FALSE,TRUE,line hazard
+496,category,Room Environment / Cleaning,Tech Support / Amenities,belongings
+499,urgency,4,2,lifting limit irrelevant to TV sound (twin 617 is 1)
+526,patient_request,The screen keeps flickering and I don't know what it means,The TV screen keeps flickering and I don't know what it means,template/unnatural wording cleaned
+577,category,Urgent Clinical / Pain,Tech Support / Amenities,request is a light fault; no symptom stated
+577,urgency,7,5,trigger exposure not an active seizure
+591,patient_context,Patient is on fall precautions and needs the room lit,Patient is on fall precautions,context rewritten as a chart fact
+593,urgency,4,2,one light out is minor
+599,patient_context,Patient is being discharged this morning and belongings are in the drawer,Patient has a weak grip in both hands,context rewritten as a chart fact
+605,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+606,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+607,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+608,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+609,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+610,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+611,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+612,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+612,patient_context,Patient is on contact precautions and the curtain must stay drawn,Patient is on contact precautions,context rewritten as a chart fact
+613,category,Tech Support / Amenities,Room Environment / Cleaning,curtains are Room Environment
+613,patient_context,Patient had eye surgery and needs the light kept out,Patient had eye surgery today,context rewritten as a chart fact
+621,patient_context,Patient is on isolation precautions and the door must remain closed,Patient is on isolation precautions,context rewritten as a chart fact
+630,patient_context,Patient has sickle cell disease and cold can trigger a crisis,Patient has sickle cell disease,context rewritten as a chart fact
+636,urgency,3,1,clock set wrong
+637,urgency,3,1,clock running fast; tone not severity
+653,urgency,6,10,cannot breathe
+653,more_info_needed,TRUE,FALSE,clinically urgent is never ring-first
+658,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling
+664,destination department,Housekeeping & facilities,Nurse,patient fears falling while standing
+664,urgency,5,7,fall risk standing
+664,clinical_review,FALSE,TRUE,fall risk
+668,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling
+671,destination department,Housekeeping & facilities,Nurse,post-op bed-rest patient trying to reach toilet
+671,clinical_review,FALSE,TRUE,fall risk
+674,category,Toileting,Unknown,names no target
+674,destination department,Housekeeping & facilities,Nurse,Unknown routes to Nurse
+674,more_info_needed,FALSE,TRUE,no actionable ask
+675,category,Toileting,Unknown,names no target
+675,destination department,Housekeeping & facilities,Nurse,Unknown routes to Nurse
+675,more_info_needed,FALSE,TRUE,no actionable ask
+682,destination department,Housekeeping & facilities,Nurse,needs help to stand
+682,clinical_review,FALSE,TRUE,cannot stand unaided
+683,destination department,Housekeeping & facilities,Nurse,post-TKR help standing is fall risk
+683,clinical_review,FALSE,TRUE,fall risk
+685,urgency,5,3,tremor irrelevant to bowl removal
+693,destination department,Housekeeping & facilities,Nurse,two-person-assist patient needs commode transfer
+693,clinical_review,FALSE,TRUE,fall risk
+695,destination department,Housekeeping & facilities,Nurse,non-weight-bearing patient asking to walk
+695,urgency,4,6,fall risk
+695,clinical_review,FALSE,TRUE,fall risk
+696,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling
+697,destination department,Housekeeping & facilities,Nurse,day-one hip replacement toileting is fall risk
+697,clinical_review,FALSE,TRUE,fall risk
+700,urgency,6,3,"""no rush"" commode request"
+705,destination department,Housekeeping & facilities,Nurse,cannot stand unaided
+705,clinical_review,FALSE,TRUE,fall risk
+709,urgency,6,3,bathroom needs a clean
+710,more_info_needed,TRUE,FALSE,clear target (bedpan)
+712,more_info_needed,TRUE,FALSE,target (toileting) is clear
+714,destination department,Housekeeping & facilities,Nurse,walking a patient is patient handling
+715,category,Toileting,Room Environment / Cleaning,bin emptying
+715,urgency,5,3,bin emptying is next-round
+729,more_info_needed,TRUE,FALSE,clear target (pads)
+731,urgency,7,5,unusable bathroom is 4-5
+732,urgency,6,3,plain bedpan request
+740,urgency,4,2,bedpan cover supply
+740,more_info_needed,TRUE,FALSE,clear target
+743,urgency,7,5,unusable toilet; context irrelevant
+749,more_info_needed,TRUE,FALSE,target (toilet) is clear
+751,urgency,6,4,dirty commode
+766,destination department,Housekeeping & facilities,Nurse,help cleaning up is an accident
+766,clinical_review,FALSE,TRUE,accident
+769,urgency,6,4,hearing loss irrelevant (twin 747 is 4)
+770,urgency,5,2,routine question
+771,destination department,Housekeeping & facilities,Nurse,help cleaning self is an accident
+771,clinical_review,FALSE,TRUE,accident
+774,destination department,Housekeeping & facilities,Nurse,help cleaning up is an accident
+774,clinical_review,FALSE,TRUE,accident
+775,category,Toileting,Room Environment / Cleaning,bin emptying
+778,clinical_review,TRUE,FALSE,no fall-risk context (cf. 658)
+779,urgency,6,4,poor vision irrelevant (twin 739 is 3)
+786,category,Toileting,Room Environment / Cleaning,bin emptying
+786,urgency,5,3,full bin is next-round
+787,category,Toileting,Urgent Clinical / Pain,catheter the body is reacting to
+788,category,Toileting,Urgent Clinical / Pain,catheter the body is reacting to
+795,destination department,Housekeeping & facilities,Nurse,getting up is patient handling not supplies
+802,clinical_review,FALSE,TRUE,basin for chemo patient implies vomiting
+805,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling
+806,urgency,5,3,context irrelevant (twin 730 is 3)
+810,urgency,7,5,unusable bathroom is 4-5
+819,category,Toileting,Room Environment / Cleaning,bin emptying
+819,urgency,5,3,full bins are next-round
+820,destination department,Housekeeping & facilities,Nurse,two-person transfer of stroke patient
+820,clinical_review,FALSE,TRUE,fall risk
+821,destination department,Housekeeping & facilities,Nurse,two-person transfer
+821,clinical_review,FALSE,TRUE,cannot transfer unaided
+827,destination department,Housekeeping & facilities,Nurse,mobility aid is clinical equipment
+833,urgency,2,4,patient waiting for bedpan
+833,more_info_needed,TRUE,FALSE,clear target (bedpan)
+835,destination department,Housekeeping & facilities,Nurse,two-person move
+835,clinical_review,FALSE,TRUE,cannot move unaided
+835,more_info_needed,TRUE,FALSE,dispatchable
+838,destination department,Housekeeping & facilities,Nurse,toilet assistance is patient handling
+839,urgency,3,5,bedpan about to overflow
+843,destination department,Housekeeping & facilities,Nurse,two-person toilet transfer
+843,clinical_review,FALSE,TRUE,cannot walk unaided
+843,more_info_needed,TRUE,FALSE,dispatchable
+844,urgency,3,5,unusable bathroom is 4-5
+847,urgency,5,6,about to have an accident
+847,more_info_needed,TRUE,FALSE,clear target
+848,urgency,2,4,wet floor is 4-5
+856,destination department,Housekeeping & facilities,Nurse,full bag implies catheter or ostomy device
+856,clinical_review,FALSE,TRUE,device
+879,patient_context,Patient is a new tracheostomy,Patient has a new tracheostomy,context rewritten as a chart fact
+881,more_info_needed,TRUE,FALSE,POD0 context makes this nurse-now (cf. 859-879)
+889,row,,,deleted as duplicate
+891,urgency,2,5,supper never came (cf. 91)
+892,patient_request,I hate to bother you Gran it is your David,Gran it is your David,template/unnatural wording cleaned
+896,more_info_needed,TRUE,FALSE,urgency 10 is never ring-first
+896,patient_context,Patient is choking and cannot get air,Patient has severe dysphagia and a high aspiration risk,context rewritten as a chart fact
+896,urgency,10,8,follows from text/context fix
+899,urgency,10,4,single apology word with no context
+899,clinical_review,TRUE,FALSE,names no symptom
+901,category,Room Environment / Cleaning,Tech Support / Amenities,clothing
+902,more_info_needed,TRUE,FALSE,urgency 10 is never ring-first
+902,patient_context,Patient is in ventricular fibrillation,Patient has a history of ventricular arrhythmia,context rewritten as a chart fact
+902,urgency,10,8,follows from text/context fix
+903,urgency,10,4,single word with no context
+903,clinical_review,TRUE,FALSE,names no symptom
+906,patient_request,Whenever I sing it helps so La la la la,La la la la,template/unnatural wording cleaned
+912,urgency,3,1,curiosity question
+913,urgency,3,1,curiosity question
+914,urgency,3,1,curiosity question
+925,patient_context,Patient has severe chest pain and is clammy,Patient has a severe peanut allergy,context rewritten as a chart fact
+931,urgency,8,5,high INR does not worsen a late pain dose
+940,urgency,6,9,new one-sided numbness
+942,urgency,6,9,cannot breathe
+951,patient_context,That line is a central venous catheter,Patient has a central venous catheter,context rewritten as a chart fact
+961,urgency,8,10,choking
+968,urgency,6,8,crushing chest weight
+1002,urgency,5,8,new numbness
+1003,urgency,7,4,numbness expected after nerve block
+1007,urgency,8,5,known vertigo already being treated
+1017,category,Toileting,Room Environment / Cleaning,bin liner change
+1022,category,Urgent Clinical / Pain,Unknown,names nothing clinical
+1022,urgency,7,5,vague with no symptom; ring-first is inconsistent with 7
+1039,category,Urgent Clinical / Pain,Unknown,names nothing clinical
+1039,urgency,7,5,vague with no symptom; ring-first is inconsistent with 7
+1055,category,Urgent Clinical / Pain,Unknown,names nothing clinical
+1059,category,Urgent Clinical / Pain,Unknown,names nothing clinical
+1059,urgency,7,5,vague with no symptom; ring-first is inconsistent with 7
+1062,urgency,7,9,heavy uncontrolled bleeding
+1067,urgency,7,5,vague with no symptom; ring-first is inconsistent with 7

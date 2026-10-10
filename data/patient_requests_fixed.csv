@@ -1,0 +1,1065 @@
+request_id,patient_context,patient_request,category,destination department,urgency,clinical_review,more_info_needed
+1,,I want someone to clean the bathroom,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+2,,I feel cold,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+3,,"I'm hungry, I need food",Dietary / Refreshment,food services,3,FALSE,FALSE
+4,,I want to go to the bathroom,Toileting,Nurse,4,FALSE,FALSE
+5,,Tv remote is not working,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+6,Patient had surgery and cannot reposition without help,I want to sit up,Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+7,,I think ac is broken,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+8,Patient is going into chest surgery tomorrow,"I would like to eat lunch, can I see a menu?",Dietary / Refreshment,Nurse,3,TRUE,FALSE
+9,,My room is cold and the bathroom floor is sticky.,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+10,,Can I get some ice water and apple juice?,Dietary / Refreshment,food services,2,FALSE,FALSE
+11,,The television remote isn't changing channels.,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+12,,My surgical incision is throbbing and I feel dizzy.,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+13,,Im feeling extremly cold all of a sudden.,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+14,,You forgot to give me my medicine,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+15,,I never got my breakfast,Dietary / Refreshment,food services,4,FALSE,FALSE
+16,,,Unknown,Nurse,5,FALSE,TRUE
+17,,I need a blanket,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+18,,My light isnt working,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+19,,My IV line stopped working,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+20,Patient is at high risk of heart attack,I am having chest pain,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+21,Patient is not at high risk of heart attack,I am having chest pain,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+22,Patient went through surgery night before,I never got my breakfast,Dietary / Refreshment,Nurse,6,TRUE,FALSE
+23,,"I am bleeding, my wound is opening",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+24,Patient is on a ventilator,,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+25,Patient has a chronic respiratory condition and is on supplemental oxygen,im coughing a lot,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+26,,I think the AC is blowing hot air,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+27,,The garbage can is overflowing,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+28,Patient had a knee replacement this morning and uses a walker,The bathroom floor is wet,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+29,,The bathroom floor is wet,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+30,,Can I get some ginger ale and crackers,Dietary / Refreshment,food services,2,FALSE,FALSE
+31,Patient is NPO for surgery in two hours,Can I have something to eat,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+32,,Can I have something to eat,Dietary / Refreshment,food services,2,FALSE,FALSE
+33,,I need a bedpan,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+34,,The outlet next to my bed doesn't work,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+35,,The machine keeps beeping and I don't know why,Urgent Clinical / Pain,Nurse,6,TRUE,TRUE
+36,Patient had a cardiac catheterization this morning,I feel pressure in my chest,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+37,,I feel pressure in my chest,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+38,,I need help,Unknown,Nurse,5,FALSE,TRUE
+39,,I can't breathe at all,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+40,,This is an emergency I need water right now,Dietary / Refreshment,food services,2,FALSE,FALSE
+41,Patient is on a fluid restriction,This is an emergency I need water right now,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+42,,I can't take this anymore somebody needs to come right now,Unknown,Nurse,2,FALSE,TRUE
+43,,My pain is a ten out of ten I need something right now,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+44,Patient has a PCA pump and had a bolus twenty minutes ago,My pain is a ten out of ten I need something right now,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+45,,Something feels off and I don't know what's wrong with me,Unknown,Nurse,3,TRUE,TRUE
+46,,Sorry to bother you I'm just a bit short of breath,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+47,,It's probably nothing but my chest feels a bit tight,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+48,Patient has a history of pulmonary embolism,It's probably nothing but my chest feels a bit tight,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+49,,I don't want to make a fuss but my legs have gone numb,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+50,Patient had spinal anesthesia two hours ago,I don't want to make a fuss but my legs have gone numb,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+51,,I'm sorry I know you're busy but I feel a bit sick and sweaty,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+52,,I don't want to be a problem but I think I'm bleeding a little,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+53,,Please don't rush I just need a fresh water jug whenever someone has a minute,Dietary / Refreshment,food services,2,FALSE,FALSE
+54,,Whenever someone gets a chance could I get another pillow,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+55,,I've been waiting forever and my chest is tight get someone in here now,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+56,Patient had a cardiac catheterization this morning,I've been waiting forever and my chest is tight get someone in here now,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+57,,I'm so sick of this I've been in agony for an hour and nobody has come,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+58,,This room is disgusting I want somebody in here to clean it right now,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+59,,You people are useless I want to talk to someone in charge,Unknown,Nurse,2,FALSE,TRUE
+60,,This food is garbage and I'm not eating it,Dietary / Refreshment,food services,2,FALSE,FALSE
+61,,I'm not waiting another minute for these pills where are they,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+62,,It's not too bad maybe a two out of ten but my back hurts a little,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+63,Patient has a history of aortic dissection,It's not too bad maybe a two out of ten but my back hurts a little,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+64,Patient is on therapeutic anticoagulation with a recent GI bleed,It's only a little sore in my belly but I don't want to make a big deal of it,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+65,Patient has sickle cell disease,It's just my usual pain I don't need anything yet,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+66,Patient has a history of pulmonary embolism,It's not too bad just a bit short of breath when I move,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+67,Patient has chronic arthritis and reports this same ache every shift,It's not too bad just my usual ache,Urgent Clinical / Pain,Nurse,3,TRUE,FALSE
+68,,My lunch came late and cold and I've given up on it,Dietary / Refreshment,food services,5,FALSE,FALSE
+69,,Nobody has come back about the meal that never arrived,Dietary / Refreshment,food services,5,FALSE,FALSE
+70,,Nobody has taken my tray and I can't eat over old food,Dietary / Refreshment,food services,3,FALSE,FALSE
+71,,This is ridiculous my dinner came far too early today,Dietary / Refreshment,food services,2,FALSE,FALSE
+72,,"Um, I asked for a hot drink over an hour ago and it never came",Dietary / Refreshment,food services,5,FALSE,FALSE
+73,Patient has diabetes and is on a carbohydrate-controlled diet,Whenever someone has a minute when does the next meal come,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+74,,"Er, I've had nothing to drink since the trolley went round",Dietary / Refreshment,food services,5,FALSE,FALSE
+75,Patient is unable to lean forward,"Um, my tray has been left where I can't reach it",Dietary / Refreshment,food services,5,FALSE,FALSE
+76,,I've had nothing to eat all day and nobody has been round,Dietary / Refreshment,food services,6,FALSE,FALSE
+77,Patient needs glasses to read the menu,My supper was missed altogether tonight,Dietary / Refreshment,food services,5,FALSE,FALSE
+78,,I don't want to make a fuss but I've been waiting on the tea round for well over an hour,Dietary / Refreshment,food services,5,FALSE,FALSE
+79,Patient cannot open screw topped cartons,My lunch came but half of it was missing and nobody came back,Dietary / Refreshment,food services,5,FALSE,FALSE
+80,,I've been asking for something to eat since midday,Dietary / Refreshment,food services,5,FALSE,FALSE
+81,Patient was NPO for a procedure this morning,This is ridiculous my dinner came far too early today,Dietary / Refreshment,food services,2,FALSE,FALSE
+82,,"Sorry, my tea has gone cold waiting and nobody has been back",Dietary / Refreshment,food services,5,FALSE,FALSE
+83,Patient has a history of dehydration,My broth came out cold again,Dietary / Refreshment,food services,4,FALSE,FALSE
+84,,The tea round went past again without stopping,Dietary / Refreshment,food services,5,FALSE,FALSE
+85,Patient is hard of hearing,I've waited well over an hour for a hot drink,Dietary / Refreshment,food services,5,FALSE,FALSE
+86,,I've been left with nothing to drink since the trolley,Dietary / Refreshment,food services,5,FALSE,FALSE
+87,Patient has diabetes and takes insulin with meals,Whenever someone has a minute when does the next meal come,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+88,,My tray never came at lunchtime and it's nearly evening,Dietary / Refreshment,food services,5,FALSE,FALSE
+89,Patient is unable to lift anything over a kilogram,The wrong tray came and now it's cold anyway,Dietary / Refreshment,food services,5,FALSE,FALSE
+90,,"Sorry, every tray today has come cold and I can't eat any of it",Dietary / Refreshment,food services,6,FALSE,FALSE
+91,Patient has a longstanding tremor,"Sorry, nobody has brought anything for my supper and it's late",Dietary / Refreshment,food services,6,FALSE,FALSE
+92,,I've had nothing to drink all day and my jug is empty,Dietary / Refreshment,food services,6,FALSE,FALSE
+93,Patient has a stiff neck and cannot turn to the side,I've had nothing to eat or drink since breakfast,Dietary / Refreshment,food services,6,FALSE,FALSE
+94,,I haven't eaten since breakfast and nothing has come round,Dietary / Refreshment,food services,6,FALSE,FALSE
+95,,My meal has never come and it's well past the time,Dietary / Refreshment,food services,6,FALSE,FALSE
+96,,My meal has never arrived and I've been asking since six,Dietary / Refreshment,food services,6,FALSE,FALSE
+97,,The soup was cold and nothing came back,Dietary / Refreshment,food services,4,FALSE,FALSE
+98,,The milk has gone off and it's all I have to drink,Dietary / Refreshment,food services,4,FALSE,FALSE
+99,,My dinner came with none of the things I asked for,Dietary / Refreshment,food services,4,FALSE,FALSE
+100,,My soup has gone cold before it reached me,Dietary / Refreshment,food services,5,FALSE,FALSE
+101,,The plates have been taken but I haven't finished,Dietary / Refreshment,food services,4,FALSE,FALSE
+102,,I think my lunch went to the wrong room,Dietary / Refreshment,food services,4,FALSE,FALSE
+103,,My drink has been out of reach since this morning,Dietary / Refreshment,food services,4,FALSE,FALSE
+104,,My tea came without any milk and it's gone cold,Dietary / Refreshment,food services,4,FALSE,FALSE
+105,,The food in this place is garbage,Dietary / Refreshment,food services,1,FALSE,TRUE
+106,,"Sorry, I've been waiting a long time for someone to take my tray",Dietary / Refreshment,food services,4,FALSE,FALSE
+107,,"Um, my pudding was missing from the tray again",Dietary / Refreshment,food services,4,FALSE,FALSE
+108,,My drink has been sitting out for hours,Dietary / Refreshment,food services,4,FALSE,FALSE
+109,,I've asked twice for more bread and nothing has come,Dietary / Refreshment,food services,4,FALSE,FALSE
+110,,I asked for a small portion and got far too much,Dietary / Refreshment,food services,2,FALSE,FALSE
+111,,I hate to bother you but I've been waiting on a meal since last night and I'm worn out,Dietary / Refreshment,food services,7,FALSE,FALSE
+112,,It's probably nothing but I'm not sure what I'm allowed to eat,Dietary / Refreshment,Nurse,1,TRUE,FALSE
+113,,I hate to bother you but I've had no food or drink since yesterday and nobody has come,Dietary / Refreshment,food services,7,FALSE,FALSE
+114,,I'd like a hot drink instead of the cold one,Dietary / Refreshment,food services,2,FALSE,FALSE
+115,,I've had nothing since last night and nobody has been near,Dietary / Refreshment,food services,6,FALSE,FALSE
+116,,I hate to bother you but my broth is cold,Dietary / Refreshment,food services,3,FALSE,FALSE
+117,,Sorry I think my toast came out a bit burnt,Dietary / Refreshment,food services,2,FALSE,FALSE
+118,,I don't want to be a problem could I get some jelly,Dietary / Refreshment,food services,2,FALSE,FALSE
+119,,"Sorry, there were no vegetables on my plate tonight",Dietary / Refreshment,food services,2,FALSE,FALSE
+120,,"Um, my toast was cold by the time it got here",Dietary / Refreshment,food services,2,FALSE,FALSE
+121,,Whenever you're free I'd like a glass of ice water,Dietary / Refreshment,food services,2,FALSE,FALSE
+122,,I hate to bother you but my tea went cold,Dietary / Refreshment,food services,3,FALSE,FALSE
+123,,Sorry but could I get a few more crackers,Dietary / Refreshment,food services,2,FALSE,FALSE
+124,,No rush but some toast would be lovely,Dietary / Refreshment,food services,2,FALSE,FALSE
+125,,I don't want to be a problem but I don't know what I ordered,Dietary / Refreshment,food services,2,FALSE,TRUE
+126,,Whenever it's convenient could someone bring jelly,Dietary / Refreshment,food services,2,FALSE,FALSE
+127,,I think I'm not sure what I can have,Dietary / Refreshment,Nurse,1,TRUE,FALSE
+128,,Can I get the usual please,Dietary / Refreshment,food services,2,FALSE,TRUE
+129,,Just bring me whatever came before,Dietary / Refreshment,food services,2,FALSE,TRUE
+130,,I'm so thirsty I can't get to sleep,Dietary / Refreshment,food services,3,FALSE,FALSE
+131,,I keep waking up hungry and I can't rest,Dietary / Refreshment,food services,3,FALSE,FALSE
+132,,My mouth is so dry I can't take my tablets,Dietary / Refreshment,food services,4,FALSE,FALSE
+133,Patient has documented poor oral intake,Has my lunch tray come up yet,Dietary / Refreshment,food services,4,FALSE,FALSE
+134,,Has my lunch tray come up yet,Dietary / Refreshment,food services,3,FALSE,FALSE
+135,Patient is underweight with a low BMI on file,I hate to bother but my supper tray never came,Dietary / Refreshment,food services,5,FALSE,FALSE
+136,,I hate to bother but my supper tray never came,Dietary / Refreshment,food services,4,FALSE,FALSE
+137,Patient has a documented malnutrition risk,There is no tray on my table,Dietary / Refreshment,food services,4,FALSE,FALSE
+138,,There is no tray on my table,Dietary / Refreshment,food services,3,FALSE,FALSE
+139,,Could I have jam on the toast please,Dietary / Refreshment,food services,2,FALSE,FALSE
+140,,Sorry to bother but my breakfast never came,Dietary / Refreshment,food services,4,FALSE,FALSE
+141,,Where is my dinner I want it right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+142,,This tray is not mine I need the right one immediately,Dietary / Refreshment,food services,3,FALSE,FALSE
+143,,This belongs to the patient next door,Dietary / Refreshment,food services,3,FALSE,FALSE
+144,,Why hasn't anyone sent my order,Dietary / Refreshment,food services,3,FALSE,FALSE
+145,,Nobody has given me my own dinner yet,Dietary / Refreshment,food services,3,FALSE,FALSE
+146,,I don't want to make a fuss but that tray has someone else's name,Dietary / Refreshment,food services,3,FALSE,FALSE
+147,,Sorry I think this meal isn't mine,Dietary / Refreshment,food services,3,FALSE,FALSE
+148,,Whose tray is this I need mine right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+149,,Sorry but that name isn't mine,Dietary / Refreshment,food services,3,FALSE,FALSE
+150,Patient is a very slow eater and trays sit a long time,My food is always cold by the time it reaches me,Dietary / Refreshment,food services,3,FALSE,FALSE
+151,,My food is always cold by the time it reaches me,Dietary / Refreshment,food services,4,FALSE,FALSE
+152,,I'm honestly fed up with cold soup every day,Dietary / Refreshment,food services,3,FALSE,FALSE
+153,,There's something wrong with my dinner right now,Dietary / Refreshment,food services,4,FALSE,FALSE
+154,,This is unacceptable everything has gone cold,Dietary / Refreshment,food services,3,FALSE,FALSE
+155,,The potatoes were hard again tonight,Dietary / Refreshment,food services,2,FALSE,FALSE
+156,,It's ridiculous that the food arrives cold every time,Dietary / Refreshment,food services,3,FALSE,FALSE
+157,,This is the third cold meal I'm sick of this,Dietary / Refreshment,food services,3,FALSE,FALSE
+158,Patient is a slow eater,Sorry my tray went before I finished,Dietary / Refreshment,food services,3,FALSE,FALSE
+159,,Sorry my tray went before I finished,Dietary / Refreshment,food services,2,FALSE,FALSE
+160,Patient needs an hour to finish a meal,Sorry my plate got cleared while I was still eating,Dietary / Refreshment,food services,3,FALSE,FALSE
+161,,Sorry my plate got cleared while I was still eating,Dietary / Refreshment,food services,2,FALSE,FALSE
+162,,Sorry my lunch got cleared away while I was in the bathroom,Dietary / Refreshment,food services,3,FALSE,FALSE
+163,,This is ridiculous my whole tray got taken,Dietary / Refreshment,food services,3,FALSE,FALSE
+164,,The aide cleared my dinner off the table,Dietary / Refreshment,food services,2,FALSE,FALSE
+165,,I wasn't finished when my plate went,Dietary / Refreshment,food services,3,FALSE,FALSE
+166,Patient is diabetic and must eat on a fixed schedule,My dinner turned up before I was even sitting up,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+167,,The meal came while I was still being washed,Dietary / Refreshment,food services,2,FALSE,FALSE
+168,Patient cannot twist to reach the side table,"Sorry, the tea trolley missed my room this morning",Dietary / Refreshment,food services,3,FALSE,FALSE
+169,,Lunch is very late I need it right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+170,Patient had a late procedure last night and slept in,Breakfast arrived long before I woke up,Dietary / Refreshment,food services,2,FALSE,FALSE
+171,,Breakfast arrived long before I woke up,Dietary / Refreshment,food services,3,FALSE,FALSE
+173,,This meal is way off schedule I need food right now,Dietary / Refreshment,food services,4,FALSE,FALSE
+174,Patient has diabetes and a standing afternoon snack order,I think it's time for my afternoon snack,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+175,,I think it's time for my afternoon snack,Dietary / Refreshment,food services,2,FALSE,FALSE
+176,Patient cannot reach past the middle of the bed,Could someone take my tray away when they can,Dietary / Refreshment,food services,3,FALSE,FALSE
+177,,I'm quite hungry can I get something to eat,Dietary / Refreshment,food services,4,FALSE,FALSE
+178,,I guess I don't know what I can eat,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+179,,If you have a minute some crackers would be lovely,Dietary / Refreshment,food services,1,FALSE,FALSE
+180,,I don't want to be a problem but a snack would be nice,Dietary / Refreshment,food services,1,FALSE,FALSE
+181,,I think some cheese and crackers would help,Dietary / Refreshment,food services,2,FALSE,FALSE
+182,,Can I get a yogurt or something light,Dietary / Refreshment,food services,1,FALSE,FALSE
+183,Patient has poor balance when seated unsupported,The cereal was stale this morning,Dietary / Refreshment,food services,3,FALSE,FALSE
+184,,Could I get some ice chips,Dietary / Refreshment,food services,1,FALSE,FALSE
+185,,The cereal was stale this morning,Dietary / Refreshment,food services,1,FALSE,FALSE
+186,,I've had nothing to eat or drink since breakfast,Dietary / Refreshment,food services,5,FALSE,FALSE
+187,,Can you bring me a cup of crushed ice,Dietary / Refreshment,food services,3,FALSE,FALSE
+188,,Whenever you can I'd love some crushed ice,Dietary / Refreshment,food services,2,FALSE,FALSE
+189,,Is it alright if I have some ice chips,Dietary / Refreshment,Nurse,1,TRUE,FALSE
+190,,I've waited well over an hour for a hot drink,Dietary / Refreshment,food services,5,FALSE,FALSE
+191,Patient is on a fluid restriction,Could I have some water please,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+192,,Could I have some water please,Dietary / Refreshment,food services,2,FALSE,FALSE
+193,,No rush but a fresh water pitcher would be nice,Dietary / Refreshment,food services,1,FALSE,FALSE
+194,,Sorry to say it but I am really quite thirsty,Dietary / Refreshment,food services,3,FALSE,FALSE
+195,,I don't want to make a fuss but could you bring the milk separately next time,Dietary / Refreshment,food services,2,FALSE,FALSE
+196,,I would like a full cup of tea not a half one,Dietary / Refreshment,food services,2,FALSE,FALSE
+197,,I drank everything I need more water right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+198,Patient is unable to lean forward,My soup has gone cold before it reached me,Dietary / Refreshment,food services,3,FALSE,FALSE
+199,,Can I get something to eat,Dietary / Refreshment,food services,2,FALSE,FALSE
+200,Patient has severe arthritis in both hands,I'd like a hot drink instead of the cold one,Dietary / Refreshment,food services,3,FALSE,FALSE
+201,,Can I have a regular drink with my meal,Dietary / Refreshment,food services,2,FALSE,FALSE
+202,Patient has heart failure on a two gram sodium diet,Everything on this tray tastes like there is no salt at all,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+203,,Everything on this tray tastes like there is no salt at all,Dietary / Refreshment,food services,1,FALSE,FALSE
+204,Patient has a longstanding tremor,The trolley went past without stopping at my room,Dietary / Refreshment,food services,3,FALSE,FALSE
+205,,How many carbs are in this slice of cake,Dietary / Refreshment,food services,2,FALSE,FALSE
+206,Patient has limited shoulder movement,My dinner arrived with no dessert on it,Dietary / Refreshment,food services,3,FALSE,FALSE
+207,,That supplement shake always makes my stomach hurt,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+208,Patient has limited shoulder movement,Could I get some gravy on that,Dietary / Refreshment,food services,2,FALSE,FALSE
+209,,My broth came out cold again,Dietary / Refreshment,food services,1,FALSE,FALSE
+210,Patient has ill fitting dentures on file,The meat on this tray is too tough to chew,Dietary / Refreshment,food services,4,FALSE,FALSE
+211,,The meat on this tray is too tough to chew,Dietary / Refreshment,food services,2,FALSE,FALSE
+212,Patient is unable to reach their own feet,Could I have jam on the toast please,Dietary / Refreshment,food services,2,FALSE,FALSE
+213,,Can I have a proper meal tonight,Dietary / Refreshment,food services,1,FALSE,FALSE
+214,Patient has chronic kidney disease and a protein restriction,I am not drinking that shake again,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+215,,I am not drinking that shake again,Dietary / Refreshment,food services,2,FALSE,FALSE
+216,Patient had gastric bypass surgery last year,My sister brought in some soup can I have it,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+217,,My sister brought in some soup can I have it,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+218,Patient is unable to lean forward,The potatoes were hard again tonight,Dietary / Refreshment,food services,3,FALSE,FALSE
+219,,What am I allowed to pick from this menu,Dietary / Refreshment,Nurse,1,TRUE,FALSE
+220,Patient has a documented gluten allergy,Is there a menu I can look at,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+221,,Is there a menu I can look at,Dietary / Refreshment,food services,1,FALSE,FALSE
+222,,Could I have an extra roll with dinner,Dietary / Refreshment,food services,2,FALSE,FALSE
+223,,If you have a minute do you have anything soft to eat,Dietary / Refreshment,food services,3,FALSE,FALSE
+224,,This tray is too hard to chew and I need soft food right now,Dietary / Refreshment,food services,4,FALSE,FALSE
+225,,This is ridiculous I can't chew a single thing here,Dietary / Refreshment,food services,3,FALSE,FALSE
+226,,I hate to bother you I guess my dentures don't fit,Dietary / Refreshment,food services,3,FALSE,FALSE
+227,,I hate to bother you but could I have a napkin with my meal,Dietary / Refreshment,food services,2,FALSE,FALSE
+228,,Could I have a glass of water with my meal,Dietary / Refreshment,food services,2,FALSE,FALSE
+229,,Is there a menu I could look at for tomorrow,Dietary / Refreshment,food services,2,FALSE,FALSE
+230,,Is it possible to have a smaller portion,Dietary / Refreshment,food services,2,FALSE,FALSE
+231,,Could I have a cup of tea when the trolley comes,Dietary / Refreshment,food services,2,FALSE,FALSE
+232,,Could I get a biscuit with the tea,Dietary / Refreshment,food services,2,FALSE,FALSE
+233,,My lunch came but half of it was missing and nobody came back,Dietary / Refreshment,food services,4,FALSE,FALSE
+234,,The phone has been dead all day and I need to reach my family,Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+235,,Can you bring me the hmm never mind what was I asking,Unknown,Nurse,2,FALSE,TRUE
+236,,I'm sorry to ask but is this supposed to be low salt,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+237,,Why hasn't anyone told me why I can't have salt,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+238,,I'm sorry but does this pudding have sugar,Dietary / Refreshment,food services,2,FALSE,FALSE
+239,,"Um, could someone help me open this carton",Dietary / Refreshment,food services,2,FALSE,FALSE
+240,,Why hasn't anyone told me if potato counts as carbs,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+241,,If you have a minute could you tell me the sugar in this juice,Dietary / Refreshment,food services,3,FALSE,FALSE
+242,,How long do I have to guess my own carb counts,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+243,,Could I have a proper cup of coffee please,Dietary / Refreshment,food services,2,FALSE,FALSE
+244,,"Um, could I have a jug of cold water please",Dietary / Refreshment,food services,2,FALSE,FALSE
+245,,I hate to bother you but I'd prefer the fish rather than the pie tonight,Dietary / Refreshment,food services,2,FALSE,FALSE
+246,,Can you send me one of those little cups from breakfast,Dietary / Refreshment,food services,3,FALSE,FALSE
+247,,This shake is garbage I am not drinking it,Dietary / Refreshment,food services,2,FALSE,FALSE
+248,,Sorry could I skip the shake and have something else,Dietary / Refreshment,food services,2,FALSE,FALSE
+249,,Could I get some gravy on that,Dietary / Refreshment,food services,3,FALSE,FALSE
+250,,Sorry can my wife's fruit stay here,Dietary / Refreshment,food services,2,FALSE,FALSE
+251,,The trolley went past without stopping at my room,Dietary / Refreshment,food services,4,FALSE,FALSE
+252,,My son sneaked in a burger I want to eat it right now,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+253,,Nobody has told me if I can eat this food from home,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+254,,I'm sorry but is my husband allowed to bring me dinner,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+255,,Sorry can I see tomorrow's menu,Dietary / Refreshment,food services,1,FALSE,FALSE
+256,,Why hasn't anyone brought me the food list,Dietary / Refreshment,food services,2,FALSE,FALSE
+257,,Why hasn't anyone given me a menu I want to choose,Dietary / Refreshment,food services,3,FALSE,FALSE
+258,,I'm sorry do you have a menu in larger print,Dietary / Refreshment,food services,3,FALSE,FALSE
+259,,Where do I find what the kitchen is serving,Dietary / Refreshment,food services,3,FALSE,FALSE
+260,,Can I get the menu whenever someone has a minute,Dietary / Refreshment,food services,1,FALSE,FALSE
+261,,I want the uh the cold one somebody mentioned,Dietary / Refreshment,food services,2,FALSE,TRUE
+262,,Do you have the um the little packet thing for my tray,Dietary / Refreshment,food services,2,FALSE,TRUE
+263,Patient has poor balance when seated unsupported,There's nothing on the trolley I can manage at all,Dietary / Refreshment,food services,4,FALSE,FALSE
+264,,Sorry are there peanuts in the soup today,Dietary / Refreshment,Nurse,1,TRUE,FALSE
+265,Patient cannot open screw topped cartons,I don't want to make a fuss but could you bring the milk separately next time,Dietary / Refreshment,food services,3,FALSE,FALSE
+266,,Hate to bother you but does the fish have shellfish in it,Dietary / Refreshment,Nurse,2,TRUE,FALSE
+267,Patient has a severe shellfish allergy,What is in the soup today,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+268,,What is in the soup today,Dietary / Refreshment,food services,3,FALSE,FALSE
+269,,Could I have some butter for the bread,Dietary / Refreshment,food services,2,FALSE,FALSE
+270,,Is there any chance of a second slice of toast,Dietary / Refreshment,food services,2,FALSE,FALSE
+271,,"Er, could I have a banana if there is one left",Dietary / Refreshment,food services,2,FALSE,FALSE
+272,Patient has very dry eyes,I would like a full cup of tea not a half one,Dietary / Refreshment,food services,3,FALSE,FALSE
+273,,Could I get some salt for this,Dietary / Refreshment,food services,1,FALSE,FALSE
+274,,Could someone bring my tray over to the chair,Dietary / Refreshment,food services,2,FALSE,FALSE
+275,,If you have a minute could I get some hot sauce,Dietary / Refreshment,food services,2,FALSE,FALSE
+276,,My food has no taste at all I need something right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+277,,Sorry to be a pain could someone bring salt and pepper,Dietary / Refreshment,food services,2,FALSE,FALSE
+278,,Sorry I do not recognize half of what is on this tray,Dietary / Refreshment,food services,3,FALSE,FALSE
+279,Patient has poor vision without glasses,"Um, my toast was cold by the time it got here",Dietary / Refreshment,food services,3,FALSE,FALSE
+280,,"Sorry, the tea trolley missed my room this morning",Dietary / Refreshment,food services,2,FALSE,FALSE
+281,,The sugar sachets were missing from my tray,Dietary / Refreshment,food services,2,FALSE,FALSE
+282,,"Um, my tray has been left where I can't reach it",Dietary / Refreshment,food services,4,FALSE,FALSE
+283,,My supper was missed altogether tonight,Dietary / Refreshment,food services,4,FALSE,FALSE
+284,,Nobody said what the food is going to be today,Dietary / Refreshment,food services,3,FALSE,FALSE
+285,,My tray came without any cutlery and my food is getting cold hurry,Dietary / Refreshment,food services,5,FALSE,FALSE
+286,Patient has a weak grip in both hands,The sugar sachets were missing from my tray,Dietary / Refreshment,food services,3,FALSE,FALSE
+287,,Can I swap this apple for applesauce,Dietary / Refreshment,food services,2,FALSE,FALSE
+288,,Could someone take my tray away when they can,Dietary / Refreshment,food services,2,FALSE,FALSE
+289,,I cannot stand kidney beans this is ridiculous,Dietary / Refreshment,food services,3,FALSE,FALSE
+290,,Can you take the coffee off my tray and leave juice instead,Dietary / Refreshment,food services,3,FALSE,FALSE
+291,,"Sorry, Is there anything warm to drink this afternoon",Dietary / Refreshment,food services,2,FALSE,FALSE
+292,,This tea is disgusting could I get actual milk,Dietary / Refreshment,food services,2,FALSE,FALSE
+293,Patient is on a scheduled insulin dose at noon,My dinner turned up before I was even sitting up,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+294,,Is there a set time for the evening round,Dietary / Refreshment,food services,1,FALSE,FALSE
+295,,I think I missed breakfast what time is dinner,Dietary / Refreshment,food services,2,FALSE,FALSE
+296,,No rush but how long until the next tray,Dietary / Refreshment,food services,3,FALSE,FALSE
+297,,Is breakfast coming soon I am starving hurry,Dietary / Refreshment,food services,4,FALSE,FALSE
+298,,Why hasn't anyone told me when lunch is,Dietary / Refreshment,food services,3,FALSE,FALSE
+299,,Nobody has told me what time supper is,Dietary / Refreshment,food services,4,FALSE,FALSE
+300,Patient has a stiff neck and cannot turn to the side,Could someone bring my tray over to the chair,Dietary / Refreshment,food services,3,FALSE,FALSE
+301,,Can I get a second helping of everything,Dietary / Refreshment,food services,2,FALSE,FALSE
+302,Patient is NPO for surgery in two hours,Can I get a second serving of the mashed potatoes,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+303,,Can I get a second serving of the mashed potatoes,Dietary / Refreshment,food services,2,FALSE,FALSE
+304,,This is ridiculous there is never enough soup left,Dietary / Refreshment,food services,2,FALSE,FALSE
+305,,I am still hungry and I can't take it anymore,Dietary / Refreshment,food services,4,FALSE,FALSE
+306,,Could I get seconds on the chicken please,Dietary / Refreshment,food services,2,FALSE,FALSE
+307,,That was not enough food I need more right now,Dietary / Refreshment,food services,4,FALSE,FALSE
+308,Patient has poor balance when seated unsupported,"Sorry, Is there anything warm to drink this afternoon",Dietary / Refreshment,food services,3,FALSE,FALSE
+309,,The wrong tray came and now it's cold anyway,Dietary / Refreshment,food services,4,FALSE,FALSE
+310,,Whenever you can could I get a cup of hot water for my tea bag,Dietary / Refreshment,food services,2,FALSE,FALSE
+311,,I need hot water to take my pills,Dietary / Refreshment,food services,3,FALSE,FALSE
+312,,My dinner arrived with no dessert on it,Dietary / Refreshment,food services,1,FALSE,FALSE
+313,,Do you have a kettle I could use,Dietary / Refreshment,food services,1,FALSE,FALSE
+314,,My hot water came lukewarm again I want it hot right now,Dietary / Refreshment,food services,3,FALSE,FALSE
+315,Patient has a dry mouth from radiation therapy,No rush but could I get a few mints,Dietary / Refreshment,food services,2,FALSE,FALSE
+316,,No rush but could I get a few mints,Dietary / Refreshment,food services,1,FALSE,FALSE
+317,,There's nothing on the trolley I can manage at all,Dietary / Refreshment,food services,2,FALSE,FALSE
+318,,Sorry it is probably nothing could someone bring me a mint,Dietary / Refreshment,food services,2,FALSE,FALSE
+319,,I don't want to be a problem but can I have whatever you have,Dietary / Refreshment,food services,2,FALSE,TRUE
+320,,If you have a minute I would love some peppermints,Dietary / Refreshment,food services,2,FALSE,FALSE
+321,Patient is hard of hearing,"Sorry, there were no vegetables on my plate tonight",Dietary / Refreshment,food services,3,FALSE,FALSE
+322,,What diet order does the kitchen have for me,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+323,,Sorry I think I forgot which diet the kitchen put me on,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+324,,I think nobody explained which diet I am supposed to be on,Dietary / Refreshment,Nurse,3,TRUE,FALSE
+325,,"Um, could I have milk with my tea please",Dietary / Refreshment,food services,2,FALSE,FALSE
+326,,The kitchen keeps sending me things I cannot eat and I need an answer immediately,Dietary / Refreshment,Nurse,5,TRUE,FALSE
+327,,This diet thing is unacceptable can someone explain it,Dietary / Refreshment,Nurse,4,TRUE,FALSE
+328,Patient had a total knee replacement yesterday and uses a walker,The bathroom floor is soaked,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+329,,The bathroom floor is soaked,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+330,Patient is on fall risk precautions after a hip fracture,I nearly slipped on the wet floor in the bathroom,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+331,,I nearly slipped on the wet floor in the bathroom,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+332,Patient uses a cane and is unsteady when walking,There is water all over the floor beside my bed,Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+333,,There is water all over the floor beside my bed,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+334,Patient is neutropenic after a bone marrow transplant,The trash can is disgusting and overflowing,Room Environment / Cleaning,Housekeeping & facilities,6,TRUE,FALSE
+335,,The trash can is disgusting and overflowing,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+336,Patient has a surgical drain in place,My sheets are stained,Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+337,,My sheets are stained,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+338,Patient is being treated for sepsis,Can I get another blanket please,Room Environment / Cleaning,Housekeeping & facilities,5,TRUE,FALSE
+339,,Can I get another blanket please,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+340,Patient is on antipsychotics and cannot tolerate heat,I am fed up with how hot this room is,Room Environment / Cleaning,Housekeeping & facilities,6,TRUE,FALSE
+341,,I am fed up with how hot this room is,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+342,Patient has multiple sclerosis and is heat sensitive,Sorry but this room is a bit warm for me,Room Environment / Cleaning,Housekeeping & facilities,5,TRUE,FALSE
+343,,Sorry but this room is a bit warm for me,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+344,Patient has a history of heat stroke,No rush but could someone cool this room down,Room Environment / Cleaning,Housekeeping & facilities,5,TRUE,FALSE
+345,,No rush but could someone cool this room down,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+346,Patient has urinary incontinence,I need my sheets changed,Room Environment / Cleaning,Nurse,4,TRUE,FALSE
+347,,I need my sheets changed,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+348,Patient has lymphoma with documented night sweats,Could someone change my sheets,Room Environment / Cleaning,Housekeeping & facilities,4,TRUE,FALSE
+349,,Could someone change my sheets,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+350,Patient is on contact precautions for MRSA,Sorry the trash in here is piling up,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+351,,Sorry the trash in here is piling up,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+352,Patient is on contact precautions for norovirus,The bathroom needs cleaning,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+353,,The bathroom needs cleaning,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+354,Patient had neck surgery yesterday,Sorry to bother you could I have another pillow,Room Environment / Cleaning,Housekeeping & facilities,4,TRUE,FALSE
+355,,Sorry to bother you could I have another pillow,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+356,Patient had surgery this morning,If you have a minute could I get one more blanket,Room Environment / Cleaning,Housekeeping & facilities,3,TRUE,FALSE
+357,,If you have a minute could I get one more blanket,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+358,Patient is on C. diff isolation,Someone needs to clean my bathroom,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+359,,Someone needs to clean my bathroom,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+360,,"Er, the window is jammed open and the room is freezing at night",Room Environment / Cleaning,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+361,,The bathroom has been blocked for hours and I can't use it,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+362,,"Um, the bed controls have stopped and I can't adjust anything",Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+363,,The bed rail is stuck up and I can't get out of bed,Room Environment / Cleaning,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+364,,I don't want to make a fuss but my bed is jammed at the wrong angle and I can't reach anything,Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+365,,The socket sparks every time and nothing is safe to use,Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+366,,The socket beside the bed sparks when I plug in,Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+367,,The bed is jammed and I can't sit myself up,Tech Support / Amenities,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+368,,Sorry to bother you but a second pillow would be nice,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+369,,There's water pouring from the sink onto the floor,Room Environment / Cleaning,Unit Clerk / IT Maintenance,6,FALSE,FALSE
+370,,"Er, the bed won't move at all and I'm stuck in an awkward position",Tech Support / Amenities,Unit Clerk / IT Maintenance,6,FALSE,FALSE
+371,,come,Unknown,Nurse,4,FALSE,TRUE
+372,,I don't want to make a fuss but the curtain rail has come away from the wall,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+373,,My family left a pile of clothes and there is nowhere to put them,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+374,,The bathroom mirror has a crack in one corner,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+376,,The window catch is broken and won't shut,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+377,,The sink in the bathroom drains very slowly,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+378,,"Um, the lamp shade is crooked and I can't reach it",Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+379,,The curtain rail has come away on one side,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+380,,My bed rail will not go down,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+381,,The coat hook on the door is coming loose,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+382,,The bed won't raise at the head end,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+383,,The wardrobe door has come off its runner,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+384,,I don't want to make a fuss but there are no wipes or paper and I need to clean up,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+385,,I need a hand getting turned onto my other side,Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+386,Patient had abdominal surgery this morning with a drain in place,I need a hand getting turned onto my other side,Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+387,,Could someone put the rail down so I can swing my legs out,Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+388,Patient is a high fall risk with overnight confusion,Could someone put the rail down so I can swing my legs out,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+389,,"Sorry, it's freezing in here, is there any way to warm it up",Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+390,Patient is post-operative and on warmed IV fluids,"Sorry, it's freezing in here, is there any way to warm it up",Room Environment / Cleaning,Housekeeping & facilities,5,TRUE,FALSE
+391,,The light switch is stiff but it still works,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+392,Patient has COPD and is on two litres of oxygen,"I need a fan in here right now, it's really stuffy",Tech Support / Amenities,Unit Clerk / IT Maintenance,5,TRUE,FALSE
+393,,"I keep sliding down the bed, can someone help me sit up",Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+394,Patient had a stroke and has weakness on the left side,"I keep sliding down the bed, can someone help me sit up",Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+395,,"Er, the clock on the wall has stopped again",Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+396,Patient had a head injury and photophobia is documented,"These lights are ridiculous, I can't sleep with them on",Room Environment / Cleaning,Unit Clerk / IT Maintenance,6,TRUE,FALSE
+397,,I hate to bother you but the picture above my bed is hanging crooked,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+398,Patient is on a migraine protocol,Can somebody pull the window shade down? The sun is in my eyes,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,TRUE,FALSE
+399,,It's ridiculous that nobody has closed my curtain,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+400,Patient has an open abdominal wound,It's ridiculous that nobody has closed my curtain,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+401,,Can the chair be moved out of my way right now,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+402,Patient had a hip replacement and uses a walker,Can the chair be moved out of my way right now,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+403,,"This is unacceptable, the air in here is stale",Room Environment / Cleaning,Housekeeping & facilities,1,FALSE,FALSE
+404,Patient is on a cooling protocol after a fever,"This is unacceptable, the air in here is stale",Room Environment / Cleaning,Housekeeping & facilities,4,TRUE,FALSE
+405,,"My hands are freezing, could I get another blanket",Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+406,Patient has a low body temperature and warmed blankets are ordered,"My hands are freezing, could I get another blanket",Room Environment / Cleaning,Housekeeping & facilities,4,TRUE,FALSE
+407,,The window is letting in way too much light,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+408,Patient had eye surgery today,The window is letting in way too much light,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,TRUE,FALSE
+409,,The wardrobe door squeaks when it's opened,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+410,Patient is on spinal precautions and cannot turn their head,Could you lower the blind? The glare is bad,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+411,,"Somebody should have drawn this curtain, it's disgusting that they can see me",Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+412,Patient has a documented anxiety disorder,"Somebody should have drawn this curtain, it's disgusting that they can see me",Room Environment / Cleaning,Housekeeping & facilities,4,FALSE,FALSE
+413,,"There's a table in my way, I need it moved immediately",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+414,Patient had a knee replacement this morning and uses a walker,"There's a table in my way, I need it moved immediately",Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+415,,"Sorry to go on, the air conditioning is set far too high in here",Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+416,,There's water on the bathroom floor and I nearly slipped,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+417,,Could you help me get my legs back into bed,Room Environment / Cleaning,Nurse,5,TRUE,FALSE
+418,,The visitor chair has a wobbly leg,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+419,,The bathroom tiles have a small chip in them,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+420,,"I guess it's the air in here, I can't explain it, someone should come",Room Environment / Cleaning,Housekeeping & facilities,1,FALSE,TRUE
+421,,Could I have a bag for my things,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+422,,"Sorry, the curtain is kind of half pulled, could it be closed",Room Environment / Cleaning,Housekeeping & facilities,1,FALSE,FALSE
+423,,I don't want to make a fuss but the radiator valves won't move at all,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+424,,The radiator makes a ticking sound,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+425,,"The table is sort of shoved against my bed, can it be pulled back",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+426,,"I guess I can't eat with the table this far away, could it come closer",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+427,,"Sorry, the afternoon sun is really blinding me, could the blind come down",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+428,,"I think it's too dark to read over here, could the shade be raised",Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+429,,"I hate to bother you, the glare from the window is hurting my eyes",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+430,,There's too much light in here and I can't explain what I need,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+431,,"I can't take this anymore, can someone turn these lights off",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+432,,Could you lower the blind? The glare is bad,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+433,,Can the rail go up on this side? I'm kind of worried I'll roll out,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+434,,The chair is missing one of its glides,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+435,,The curtain has a small tear in it,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+436,,"Sorry, this rail is in my way when I try to get out of bed",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+437,,Both rails are up and I can't get out to the bathroom,Room Environment / Cleaning,Unit Clerk / IT Maintenance,5,FALSE,FALSE
+438,,"Sorry, could you raise the head of the bed just a bit? I'm sliding down",Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+439,,"Hold on, I'm stuck on my back, can the bed be tilted up",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+440,,"It's the bed, I don't know how to explain it, please come",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+441,,"I don't want to be a problem, but I've been lying flat too long",Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+442,Patient is on fall risk precautions after a hip fracture,There is a puddle of water by my bed,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+443,,There is a puddle of water by my bed,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+444,Patient had a knee replacement this morning and uses a walker,Someone spilled the whole jug across my floor,Room Environment / Cleaning,Nurse,7,TRUE,FALSE
+445,,Someone spilled the whole jug across my floor,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+446,Patient had abdominal surgery this morning and has a drain,The water I spilled is still all over the floor,Room Environment / Cleaning,Housekeeping & facilities,6,FALSE,FALSE
+447,,The water I spilled is still all over the floor,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+448,Patient is neutropenic after a bone marrow transplant,The room has a sour smell I cannot ignore,Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+449,,The room has a sour smell I cannot ignore,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+450,Patient is on contact precautions for a C diff infection,I think something in here smells awful and it keeps getting worse,Room Environment / Cleaning,Nurse,6,TRUE,FALSE
+451,,I think something in here smells awful and it keeps getting worse,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+452,Patient had a drain removed and cannot lift anything heavy,Could I have a bag for my things,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+453,,The bedside lamp flickers slightly but still works,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+454,Patient is on bed rest after spinal surgery,My family left a pile of clothes and there is nowhere to put them,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+455,,The door stop has come loose from the wall,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+456,Patient had a stroke two days ago,Is there any way to quiet the corridor down,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+457,,Is there any way to quiet the corridor down,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+458,Patient had a head injury and is sensitive to noise,People are shouting out in the hallway again,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+459,,People are shouting out in the hallway again,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+460,Patient has documented insomnia,Could somebody shut my door please,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+461,,Could somebody shut my door please,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+462,Patient has limited shoulder movement,I would like to get into my own clothes,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+463,,I would like to get into my own clothes,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+464,Patient has a weak grip in both hands,Could someone help me unpack my bag,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+465,,Could someone help me unpack my bag,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+466,Patient uses a walker,There is a wet patch on the floor under my chair,Room Environment / Cleaning,Housekeeping & facilities,4,FALSE,FALSE
+467,,There is a wet patch on the floor under my chair,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+468,Patient had a colostomy formed last week,The bin in here is making the whole room smell,Room Environment / Cleaning,Housekeeping & facilities,4,FALSE,FALSE
+469,,The bin in here is making the whole room smell,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+470,,The bed head won't stay raised and keeps dropping,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+471,,This room smells like old socks and it is foul,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+472,,The bed wheels are jammed and it won't move,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+473,,My over-bed table will not stay up,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+474,,There are no clean towels left and I'm still wet from washing,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+475,,The reading lamp by my bed does not switch on,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+476,,There is a sort of rotten smell in here and it is disgusting,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+477,,I need turning onto my other side soon,Room Environment / Cleaning,Nurse,3,FALSE,FALSE
+478,,"Sorry, where am I supposed to keep all of this",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+479,,"I need a fan in here right now, it's really stuffy",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+480,,"I hope this is not a bother, could I get a bag for my dirty clothes",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+481,,Someone is blasting music out in the hall,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+482,,It is always noisy out there and nobody does a thing about it,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+483,,"Sorry, could you help me out of this gown",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+484,,"Why do I have to keep wearing this thing, I want my own pants",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+485,,"There are bags strewn all over my floor, this is a mess",Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+486,,Somebody still has not brought my clothes and I have been waiting,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+487,,The hall light shines in every night and it never gets fixed,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+488,,"I do not like to bother you, but my suitcase is still packed and I can't unpack it myself",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+489,,People keep shouting by my door and I have had enough,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+490,,"Sorry to ask, can I get something to put my belongings in",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+491,,"I have asked twice, why is my door still wide open",Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+492,,Can somebody pull the window shade down? The sun is in my eyes,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+493,,"These lights are ridiculous, I can't sleep with them on",Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+494,,I hate to bother you but the drip stand leans over and won't stand straight,Room Environment / Cleaning,Nurse,4,TRUE,FALSE
+495,,The bedside drawer handle is broken,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+496,,"Um, I am not sure who to ask about my belongings",Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,TRUE
+497,,"Wait, would somebody come and look, it is about the room",Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,TRUE
+498,,The phone won't connect to anyone and I've been trying all day,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+499,Patient is unable to lift anything over a kilogram,The television has no sound and I can't hear it,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+500,,The bed controls have stopped responding entirely,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+501,Patient is scheduled for surgery first thing in the morning,Please turn the TV off in here,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+502,,The picture is all fuzzy and I can't watch it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+503,Patient had eye surgery this morning and cannot see well,The picture is all fuzzy and I can't watch it,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+504,,The outlet beside my bed is dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+505,Patient uses a CPAP machine at night,The outlet beside my bed is dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+506,,The phone by my bed has no dial tone,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+507,Patient is in isolation and the phone is their only contact,The phone by my bed has no dial tone,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+508,,The TV won't come on at all,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+509,Patient is on bed rest and cannot leave the room,The TV won't come on at all,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+510,,The channel won't change and it's stuck,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+511,Patient is a fall risk and is not to get out of bed,The channel won't change and it's stuck,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+512,,There's something odd happening with the TV and I can't explain it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,TRUE
+513,,Sorry to bother you but the TV won't switch on,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+514,,If you have a minute I think the TV won't turn on,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+515,,I can't take it anymore this TV won't turn on,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+516,,How long do I have to sit here with a TV that won't turn on,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+517,,The channels are kind of stuck and I can't get anything else,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+518,,It's ridiculous that I'm stuck on one channel all day,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+519,,The channels won't change and I can't take it anymore,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+520,,No rush but the channels won't change on this TV,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+521,,Sorry I think the TV is very loud in here,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+522,,I hate to bother you but the TV is a bit loud in here,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+523,,Who turned this TV up so loud it's unacceptable,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+524,,This TV is way too loud and I need it down right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+525,,Sorry to make a fuss but the TV is loud enough to hear in the hall,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+526,,The TV screen keeps flickering and I don't know what it means,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+527,,This picture is garbage I can't see a thing,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+528,,Sorry to make a fuss but the picture is a little fuzzy,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+529,,The picture is so fuzzy I can't take it anymore,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+530,,There's a humming sound near the TV and I can't find it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+531,,Would you mind turning the TV off if you have a minute,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+532,,I'd like the TV shut off whenever you can,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+533,,Why hasn't anyone turned this TV off,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+534,,Turn this TV off right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+535,,Sorry the outlet here doesn't seem to work,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+536,,This outlet has been dead for two days and nobody has fixed it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+537,,It's kind of useless that the plug by my bed doesn't work,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+538,,If you have a minute the outlet by my bed is dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+539,,The outlet is dead and I need it fixed right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+540,,The phone is making a strange sound and I can't tell what it is,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+541,,Sorry to bother you I think the phone is dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+542,,Whenever someone has a minute the phone has no tone,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+543,,Sorry the phone has no dial tone at all,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+544,,This phone has been dead an hour and why hasn't anyone come,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+545,,It's probably nothing but I think the phone line is dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+546,,The phone is dead and I need to make a call right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+547,,My phone has no dial tone and the doctor is calling me shortly,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+548,,The TV is dead and my family is coming to watch it soon,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+549,,The outlet is dead and my nebulizer needs it in an hour,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+550,,The channels won't change and the news is about to start,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+551,,The picture is fuzzy and my grandson is setting up a video visit soon,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+552,,The phone by my bed won't let me call out,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+553,Patient is on isolation precautions and family can only call them,Every time I pick up the phone it goes dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+554,,Every time I pick up the phone it goes dead,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+555,,I think something is wrong with the phone but I can't say what,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,TRUE
+556,,"This phone is useless, it rings but won't give me a line out",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+557,,"Sorry, I can't seem to get an outside line on the phone",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+558,,"This phone is useless, I've tried three times to call my wife",Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+559,,I need to call my son right now and the phone won't go through,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+560,,Sorry how do I get on the hospital wifi in here,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+561,,Sorry could you tell me the wifi name for this floor,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+562,,Sorry is there a guest wifi I could join on this floor,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+563,Patient is on bed rest awaiting a telehealth appointment,My tablet won't connect to the internet in this room,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+564,,My tablet won't connect to the internet in this room,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+565,,"This wifi is useless, it keeps cutting out while I'm on with my family",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+566,,"Sorry, I think the internet in here is down, nothing loads for me",Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+567,,The wifi keeps kicking me off right now while I'm reaching my family,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+568,,"Sorry, the bed won't move when I try to sit up",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+569,Patient had a hip replacement and cannot reposition alone,The bed is stuck in one position and won't raise,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+570,,The bed is stuck in one position and won't raise,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+571,,"Sorry, I kind of can't figure out how to raise this bed",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+572,,Something is off with this bed and I can't explain it,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+573,,"Sorry, the bed won't tilt at all, I'm stuck flat on my back",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+574,,Please turn the TV off in here,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+575,,"I need this bed lowered immediately, it's too high off the floor",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+576,,The light above my bed keeps flickering,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+577,Patient has a seizure disorder and flickering light is a documented trigger,The light above my bed keeps flickering,Tech Support / Amenities,Nurse,5,TRUE,FALSE
+578,,Something in my room keeps blinking and I can't tell what it is,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+579,,There's a light in here flashing and it's ridiculous,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+580,,"Sorry, the little light over the sink keeps flickering on and off",Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+581,,The lamp beside my bed is flickering and giving me a headache,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+582,,"I can't take this anymore, the light won't stop flickering over my head",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+583,,"Sorry, it's a bit bright in here, is there anything you can do",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+584,Patient had cataract surgery this morning,This room is far too bright to sleep in,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+585,,This room is far too bright to sleep in,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+586,,"The overhead is too bright, I think it's hurting my eyes",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+587,,"Sorry, could someone dim the lights, they're a bit strong for me",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+588,,"These lights are ridiculous, it's like an operating theatre in here",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+589,,"Turn the big light off right now, I can't rest with it on",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+590,,Sorry the bulb in the bathroom seems to have gone out,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+591,Patient is on fall precautions,The light by the door has burned out,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+592,,The light by the door has burned out,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+593,,"One of my lights is out, it's quite dark on this side",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+594,,Sorry the small lamp by the bed has stopped working,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+595,,"The reading light is dead, I think the bulb blew",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+596,,"This is unacceptable, the bulb over my bed has been out all day",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+597,,I'm sitting here in the dark right now because one of the lamps died,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+598,,Sorry my bedside drawer seems to be stuck,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+599,Patient has a weak grip in both hands,The drawer in my nightstand is jammed shut,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+600,,The drawer in my nightstand is jammed shut,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+601,,"I can't get the top drawer open right now, it's wedged shut",Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+602,,Sorry the little drawer in my table is stuck fast,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+603,,I'm not sure what it is but something by my bed is stuck,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+604,,"This drawer is useless, it's jammed and I can't get my glasses out",Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+605,,The curtain around my bed is stuck halfway and I need someone to fix it right now,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+606,,Sorry to bother you my curtain will not pull past the middle of the rail,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+607,,The little wheels have come off the curtain track and now it drags,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+608,,This curtain track is useless it has been jammed since I got here,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+609,,The curtain hooks have popped out of the track and it is bunched up by the window,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+610,,Sorry the curtain will not close all the way it is probably nothing,Room Environment / Cleaning,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+611,,The curtain rail is bent and the curtain keeps slipping off the end,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+612,Patient is on contact precautions,The curtain track is jammed and I cannot get the curtain to close,Room Environment / Cleaning,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+613,Patient had eye surgery today,The curtain track is jammed and I cannot get the curtain to close,Room Environment / Cleaning,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+614,,Something about my door is not right and I do not know how to describe it,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,TRUE
+615,,Sorry to bother you my bathroom door will not latch and keeps coming open,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+616,,The door latch is ridiculous it has been broken for two days,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+617,,The television has no sound and I can't hear it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+618,,This door is unacceptable it will not stay shut and I have no privacy,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+619,,The room door will not stay closed and it needs fixing right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+620,,Sorry hate to bother you the hallway door will not latch and the noise comes in,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+621,Patient is on isolation precautions,My room door will not latch and keeps drifting open,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+622,,My room door will not latch and keeps drifting open,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+623,,The window here is painted shut and I only wanted some air,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+624,,Sorry to bother you the window seems stuck and I cannot close it,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+625,,This window is useless I cannot get it to budge at all,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+626,,Sorry I cannot explain it well but something by the window is not right,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,TRUE
+627,,The window handle just spins and nothing happens I need it seen to right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+628,,Sorry whenever someone has a minute my window will not close properly,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+629,,Why hasn't anyone fixed this window I have asked twice,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+630,Patient has sickle cell disease,The window in my room is stuck and I cannot close it,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+631,,The window in my room is stuck and I cannot close it,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+632,,The bedside clock is an hour behind and it keeps throwing me off,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+633,,Sorry the clock is wrong it probably does not matter,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+634,,This clock is ridiculous it has been wrong since I got here,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+635,,That clock is doing the strange thing again,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,TRUE
+636,,Sorry to be a problem but the clock by my bed is set wrong,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+637,,The clock on my table is running fast and I need it fixed right now,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+638,,Sorry hate to bother you my clock is stopped and I keep losing track,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+639,Patient is on a timed insulin schedule,The clock by my bed is showing the wrong time,Tech Support / Amenities,Unit Clerk / IT Maintenance,4,FALSE,FALSE
+640,,The clock by my bed is showing the wrong time,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+641,,Could I get a pair of headphones for the TV so I do not wake my roommate,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+642,,I was told there were headphones but I never got any,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+643,,Can I borrow some headphones my roommate is trying to sleep,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+644,,I would like headphones so I can watch TV without disturbing anyone,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+645,,Sorry to ask but whenever someone has a minute could I get headphones,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+646,,This is ridiculous I asked for headphones hours ago and nobody came,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+647,,I need headphones right now the TV next door is driving me insane,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+648,,Sorry probably nothing but could I get headphones when you get a chance,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+649,,Sorry to bother you I hate to ask but I never got the headphones I was promised,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+650,,I want headphones this instant the noise in here is unbearable,Tech Support / Amenities,Unit Clerk / IT Maintenance,1,FALSE,FALSE
+651,,The tubing on my IV pole keeps catching on the bed rail,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+652,,"Um, the pain is going down my arm and I can't breathe",Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+653,,I can't get any air in at all,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+654,,Sorry this is probably nothing but the tubing keeps snagging on my pole,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+655,,This is ridiculous the tubing on my pole has been caught for an hour,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+656,Patient is on oxygen at four litres,I can't get any air in at all,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+657,,The tubing on my pole is caught on the bed rail and will not move,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+658,,I need to get to the bathroom right now,Toileting,Nurse,4,FALSE,FALSE
+659,Patient is a fall risk after a hip repair yesterday,I need to get to the bathroom right now,Toileting,Nurse,7,TRUE,FALSE
+660,,Hurry with the bedpan,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+661,Patient is on a strict two-hour toileting schedule,Hurry with the bedpan,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+662,,Nobody has brought the clean pads I asked for ages ago,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+663,Patient received a diuretic this morning,Bring me the urinal immediately,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+664,,I need help standing right now before I fall,Toileting,Nurse,7,TRUE,FALSE
+665,Patient cannot use their left hand,The floor by the toilet has been wet all morning,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+666,,Why hasn't anyone brought me the bedpan,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+667,Patient had abdominal surgery yesterday,Why hasn't anyone brought me the bedpan,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+668,,Nobody has come to help me to the bathroom,Toileting,Nurse,4,FALSE,FALSE
+669,Patient has limited shoulder movement,Nobody has brought the pads I need and it's getting late,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+670,,This is ridiculous I still can't get to a toilet,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+671,Patient is on bed rest after surgery this morning,This is ridiculous I still can't get to a toilet,Toileting,Nurse,7,TRUE,FALSE
+672,,The floor is soaked and I can't get to the toilet safely,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+673,Patient received a laxative an hour ago,How long do I have to wait for the commode,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+674,,Sorry but I can't wait until shift change,Unknown,Nurse,4,FALSE,TRUE
+675,Patient cannot bear weight on the left leg,Sorry but I can't wait until shift change,Unknown,Nurse,5,FALSE,TRUE
+676,,I hate to bother you I just need the bedpan,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+677,Patient is on strict bed rest per orders,I hate to bother you I just need the bedpan,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+678,,The bathroom is blocked and I really need to go,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+679,Patient had a stroke with left-sided weakness,Whenever someone has a minute I could use the urinal,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+680,,I've waited an hour for the commode and I'm about to go,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+681,Patient started a new blood pressure medication,No rush but I would like the commode chair,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+682,,Sorry I know you're busy but I need a hand standing up,Toileting,Nurse,4,TRUE,FALSE
+683,Patient had a total knee replacement two days ago,Sorry I know you're busy but I need a hand standing up,Toileting,Nurse,6,TRUE,FALSE
+684,,Nobody has taken the bedpan away yet,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+685,Patient has a longstanding tremor,The washing bowl has been left full of dirty water,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+686,,The toilet is blocked and I am desperate to go,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+687,Patient had a hip fracture repaired and is a fall risk,If you have a minute could you walk me to the toilet,Toileting,Nurse,7,TRUE,FALSE
+688,,The toilet is overflowing and I can't use the bathroom at all,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+689,Patient is NPO for a procedure and on bed rest,Can I get the bedpan,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+690,,I can't hold on much longer I need the commode now,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+691,Patient cannot twist to reach the side table,Could someone bring the wipes I asked about earlier,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+692,,I can't wait any longer for the commode please hurry,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+693,Patient is a two-person assist per physical therapy,I want the commode chair,Toileting,Nurse,4,TRUE,FALSE
+694,,I've been left with a full bedpan for hours,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+695,Patient is non-weight-bearing on the right leg,I need a walker,Toileting,Nurse,6,TRUE,FALSE
+696,,Help me to the toilet,Toileting,Nurse,4,FALSE,FALSE
+697,Patient had a hip replacement yesterday,Help me to the toilet,Toileting,Nurse,7,TRUE,FALSE
+698,,The bedpan has been sitting on my table too long,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+699,Patient cannot reach past the middle of the bed,There's no paper and no wipes left in the bathroom,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+700,,No rush but I would like the commode chair,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+701,,I've asked three times for the bedpan and nobody ever comes,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+702,,The commode has been left too far away for me to reach,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+703,,There's water pouring across the bathroom floor and I'm on my own,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+704,,Sorry to bother you but I think I need the toilet,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+705,,I hate to bother you but I can't stand up alone,Toileting,Nurse,6,TRUE,FALSE
+706,,There's no paper left and I've been waiting a long while,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+707,,Nobody has brought the pads I need and it's getting late,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+708,,I need the commode but it hasn't been cleaned,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+709,,Sorry the bathroom really needs a clean,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+710,,I've been waiting over an hour and the pan is overflowing,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+711,,I've spilled the washing jug in the bathroom,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+712,,I think I need the you know the bathroom thing,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+713,,The commode needs a clean before I can use it,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+714,,Can someone walk me to the bathroom,Toileting,Nurse,5,FALSE,FALSE
+715,,I'd like the bin emptied it's getting unpleasant,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+716,,The bathroom floor is slippery and needs a mop,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+717,,There's a used pad in the bin that needs taking out,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+718,,My bathroom needs a proper clean it smells in there,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+719,,How long do I have to wait for the commode,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+720,,Bring me the urinal immediately,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+721,,I've been asking for the bedpan for over an hour,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+722,,I guess I'm ready for the bedpan,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+723,,Can the commode be brought closer,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+724,,I kind of need to empty my bladder,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+725,Patient had a hip replacement three days ago and uses a walker,Sorry to bother you could I get some extra pads,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+726,,I've been left for hours and I'm desperate to go,Toileting,Housekeeping & facilities,7,FALSE,FALSE
+727,Patient takes a diuretic and passes urine often,I hate to bother you but I've used all my pads,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+728,,I hate to bother you but I've used all my pads,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+729,,Sorry to bother you could I get some extra pads,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+730,,The commode has been left in the corner since morning,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+731,,The bathroom is flooded and I can't get in at all,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+732,,Can I get the bedpan,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+733,Patient is on fall precautions and cannot walk unaided,Sorry there's no toilet paper left over here,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+734,,Sorry there's no toilet paper left over here,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+735,Patient is on neutropenic precautions after chemotherapy,There's no toilet paper in my bathroom,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+736,,The toilet won't flush and it's overflowing,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+737,,There's no toilet paper in my bathroom,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+738,,Could someone bring in more toilet paper,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+739,,The commode is filthy and I need it now,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+740,,Is there any chance of a clean bedpan cover,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+741,Patient is on bed rest and uses a bedside commode,The toilet in my room won't flush I need it fixed right now,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+742,,The toilet in my room won't flush I need it fixed right now,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+743,Patient had abdominal surgery yesterday and cannot bend,Every time I flush it comes back up this is ridiculous,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+744,,Every time I flush it comes back up this is ridiculous,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+745,Patient is in isolation for a difficile infection,My toilet is clogged and overflowing,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+746,,My toilet is clogged and overflowing,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+747,,Water is running across the floor from the bathroom,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+748,,The toilet is filling up again I need someone to hurry,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+749,,Can someone come and see to the toilet situation,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+750,Patient is receiving chemotherapy this week,Sorry the bathroom really needs a clean,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+751,,The commode has been left dirty since yesterday,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+752,Patient is on neutropenic precautions with a low white count,My bathroom is disgusting and I want it cleaned,Toileting,Housekeeping & facilities,7,FALSE,FALSE
+753,,My bathroom is disgusting and I want it cleaned,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+754,,The bathroom is disgusting and needs cleaning,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+755,,My urinal hasn't been emptied since last night,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+756,,The sink area is messy could it be wiped down,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+757,,It's getting grimy in the bathroom,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+758,Patient was admitted after an assault overnight,I don't want to be a problem but could the curtain be closed,Room Environment / Cleaning,Housekeeping & facilities,6,FALSE,FALSE
+759,,I don't want to be a problem but could the curtain be closed,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+760,Patient is on a psychiatric hold,I need the curtain shut immediately,Room Environment / Cleaning,Housekeeping & facilities,5,FALSE,FALSE
+761,,I need the curtain shut immediately,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+762,,The wall clock has stopped again,Room Environment / Cleaning,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+763,,People walking by can see me can the curtain be shut,Room Environment / Cleaning,Housekeeping & facilities,4,FALSE,FALSE
+764,,Please close the curtain I want some privacy,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+765,Patient had a stroke with weakness on the left side,Sorry to ask but I could use help cleaning up,Toileting,Nurse,6,TRUE,FALSE
+766,,Sorry to ask but I could use help cleaning up,Toileting,Nurse,5,TRUE,FALSE
+767,Patient has very dry eyes,Could someone bring the pan without making me wait,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+768,,The bathroom smells and I can't use it like that,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+769,Patient is hard of hearing,Water is running across the floor from the bathroom,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+770,,Where is the bathroom in this room,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+771,,Could someone help me clean myself up,Toileting,Nurse,4,TRUE,FALSE
+772,,No rush but I need that thing you gave me last time,Toileting,Housekeeping & facilities,4,FALSE,TRUE
+773,,I want the commode chair,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+774,,I could use a hand cleaning up when you're free,Toileting,Nurse,5,TRUE,FALSE
+775,Patient has a stiff neck and cannot turn to the side,I'd like the bin emptied it's getting unpleasant,Room Environment / Cleaning,Housekeeping & facilities,4,FALSE,FALSE
+776,,Someone needs to clear the used pans out of my bathroom,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+777,Patient is on a diuretic and walks with a cane,If you have a minute could you walk me to the toilet,Toileting,Nurse,6,TRUE,FALSE
+778,,I need to get to the toilet and I can't wait long,Toileting,Nurse,5,FALSE,FALSE
+779,Patient has poor vision without glasses,The commode is filthy and I need it now,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+780,,I've been waiting on someone to bring the commode over,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+781,,I've been sitting with the urine bottle overflowing,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+782,,I need the bedpan cleared away and a clean one ready,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+783,Patient has a longstanding tremor,My urinal hasn't been emptied since last night,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+784,,There's water all over the bathroom floor from the shower,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+785,Patient has limited shoulder movement,Could you bring the bedpan a bit more quickly,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+786,,The bin is full and there's nowhere to put anything,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+787,Patient had a prostatectomy this morning with a catheter in place,The catheter is pulling every time I move,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+788,,The catheter is pulling every time I move,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+789,,Could the commode be moved closer it's awkward from here,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+790,,The bathroom needs doing and I haven't been able to use it,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+791,,I've asked three times for the toilet paper to be replaced,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+792,Patient is a high fall risk after a hip fracture,I want to go to the bathroom by myself,Toileting,Nurse,8,TRUE,FALSE
+793,,I want to go to the bathroom by myself,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+794,Patient has poor vision without glasses,The bathroom is unusable and I'm about to have an accident,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+795,,I need to get up right now I can't wait,Toileting,Nurse,4,FALSE,FALSE
+796,Patient has a weak grip in both hands,I've run out of pads and I need one soon,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+797,,The bin has overflowed onto the floor beside the toilet,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+798,Patient is unable to lift anything over a kilogram,I've been waiting over an hour and the pan is overflowing,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+799,,I've been left alone for hours and I'm desperate,Toileting,Housekeeping & facilities,7,FALSE,FALSE
+800,Patient had abdominal surgery this morning,Sorry to bother you but this bedpan has been under me for ages,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+801,,Sorry to bother you but this bedpan has been under me for ages,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+802,Patient is on chemotherapy,I hate to bother you can I get a basin,Toileting,Housekeeping & facilities,5,TRUE,FALSE
+803,,I hate to bother you can I get a basin,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+804,Patient had cataract surgery this morning,I need help getting to the toilet at night,Toileting,Nurse,6,TRUE,FALSE
+805,,I need help getting to the toilet at night,Toileting,Nurse,4,FALSE,FALSE
+806,Patient is unable to reach their own feet,The commode has been left in the corner since morning,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+807,,The paper in the bathroom ran out again just now,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+808,Patient is on contact precautions,Sorry could I get some wipes and gloves,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+809,,Sorry could I get some wipes and gloves,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+810,Patient has a weak grip in both hands,The bathroom is flooding and I can't get in at all,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+811,,The washing bowl has been left full of dirty water,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+812,Patient has reduced sensation in the feet,The bathroom smells and I can't use it like that,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+813,,The wash bowl has been left where I can't reach it,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+814,Patient cannot reach past the middle of the bed,I've been waiting on someone to bring the commode over,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+815,,Nobody has come back for this bedpan,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+816,Patient had a catheter removed this evening,No rush but I keep needing to get up in the night,Toileting,Nurse,5,TRUE,FALSE
+817,,No rush but I keep needing to get up in the night,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+818,Patient is a new admission with poor vision,Where is the bathroom in this room,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+819,,The bins have been full all day and it's getting unhygienic,Room Environment / Cleaning,Housekeeping & facilities,3,FALSE,FALSE
+820,Patient had a stroke and has left-sided weakness,I need two of you to help me onto the commode please,Toileting,Nurse,6,TRUE,FALSE
+821,,I need two of you to help me onto the commode please,Toileting,Nurse,4,TRUE,FALSE
+822,Patient cannot use their left hand,Is there any chance of a clean bedpan cover,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+823,,I really want to walk to the bathroom on my own tonight,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+824,Patient is in isolation for C. diff,The wipes box in my bathroom is empty no rush,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+825,,The wipes box in my bathroom is empty no rush,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+826,Patient is hard of hearing,The commode has been left dirty since yesterday,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+827,,I need a walker,Toileting,Nurse,2,FALSE,FALSE
+828,Patient has an NG tube in place,Could I get a basin to rinse my mouth out,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+829,,Could I get a basin to rinse my mouth out,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+830,,Hmm is there a bathroom close to my bed,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+831,,There's no paper and no wipes left in the bathroom,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+832,,Uh can I get a basin please,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+833,,Could you bring the bedpan a bit more quickly,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+834,,It's probably nothing but this bedpan is uncomfortable,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+835,,I think I'll need two people to move me,Toileting,Nurse,3,TRUE,FALSE
+836,,The bin liner has split and it's a mess in there,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+837,,I've run out of pads and I need one soon,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+838,,I need help getting to the bathroom before it's too late,Toileting,Nurse,5,FALSE,FALSE
+839,,Hurry the bedpan is going to overflow,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+840,,The wash things I asked for never arrived and it's evening,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+841,,Could someone bring the wipes I asked about earlier,Toileting,Housekeeping & facilities,3,FALSE,FALSE
+842,,Why hasn't anyone answered me all night,Unknown,Nurse,3,FALSE,TRUE
+843,,It takes two of you to get me to the toilet,Toileting,Nurse,4,TRUE,FALSE
+844,,The bathroom is flooding and I can't get in at all,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+845,,Could someone bring the pan without making me wait,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+846,,I'm sick of this bedpan why is nobody coming,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+847,,The bathroom is unusable and I'm about to have an accident,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+848,,The floor by the toilet has been wet all morning,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+849,,Whenever someone has a minute I could use the urinal,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+850,,Nobody ever brings the basin when I ask,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+851,,I've been waiting ages for the bedpan and I really need it,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+852,,The floor around the toilet is wet and needs a mop,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+853,,I have no paper left and I need the toilet soon,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+854,,The bathroom looks like it hasn't been done today,Toileting,Housekeeping & facilities,4,FALSE,FALSE
+855,,The toilet paper ran out and it's been ages since I asked,Toileting,Housekeeping & facilities,5,FALSE,FALSE
+856,,How long do I have to wait with this full bag,Toileting,Nurse,4,TRUE,FALSE
+857,,I can't hold this bedpan much longer,Toileting,Housekeeping & facilities,6,FALSE,FALSE
+858,,Anybody there,Unknown,Nurse,3,FALSE,TRUE
+859,Patient had a stroke this morning,Anybody there,Unknown,Nurse,8,TRUE,FALSE
+860,,Mm mm mm,Unknown,Nurse,3,FALSE,TRUE
+861,Patient is on a ventilator after surgery this morning,Mm mm mm,Unknown,Nurse,9,TRUE,FALSE
+862,,Where am I,Unknown,Nurse,3,FALSE,TRUE
+863,Patient had a fall overnight with a head strike,Where am I,Unknown,Nurse,8,TRUE,FALSE
+864,,I want to go home,Unknown,Nurse,3,FALSE,TRUE
+865,Patient is in acute alcohol withdrawal,I want to go home,Unknown,Nurse,7,TRUE,FALSE
+866,,Where are my clothes,Unknown,Nurse,3,FALSE,TRUE
+867,Patient is post-operative day zero after spinal fusion,Where are my clothes,Unknown,Nurse,7,TRUE,FALSE
+868,,Hello hello,Unknown,Nurse,3,FALSE,TRUE
+869,Patient had a craniotomy this morning,Hello hello,Unknown,Nurse,7,TRUE,FALSE
+870,,I wanted to tell you about the,Unknown,Nurse,3,FALSE,TRUE
+871,Patient has expressive aphasia after a stroke,I wanted to tell you about the,Unknown,Nurse,7,TRUE,FALSE
+872,,I cannot hear you over this,Unknown,Nurse,3,FALSE,TRUE
+873,Patient had a craniotomy this morning,I cannot hear you over this,Unknown,Nurse,6,TRUE,FALSE
+874,,Rosa is that you,Unknown,Nurse,3,FALSE,TRUE
+875,Patient has severe dementia and is disoriented,Rosa is that you,Unknown,Nurse,6,TRUE,FALSE
+876,,I want to leave,Unknown,Nurse,3,FALSE,TRUE
+877,Patient is a fall risk with a new hip repair,I want to leave,Unknown,Nurse,8,TRUE,FALSE
+878,,Mmm mmm help,Unknown,Nurse,4,FALSE,TRUE
+879,Patient has a new tracheostomy,Mmm mmm help,Unknown,Nurse,7,TRUE,FALSE
+880,,Mom I am fine,Unknown,Nurse,3,FALSE,TRUE
+881,Patient is post-operative day zero after abdominal surgery,Mom I am fine,Unknown,Nurse,5,TRUE,FALSE
+882,,Somebody right now,Unknown,Nurse,3,FALSE,TRUE
+883,,Hey you come over here right now,Unknown,Nurse,3,FALSE,TRUE
+884,,Wait sorry I was about to ask you about the,Unknown,Nurse,3,FALSE,TRUE
+885,,Sorry the doctor said something about my heart,Unknown,Nurse,4,FALSE,TRUE
+886,,Wha what is happening to me right now,Unknown,Nurse,4,FALSE,TRUE
+887,,Nnn nnn nurse hurry,Unknown,Nurse,4,FALSE,TRUE
+888,,The phone beside my bed won't ring at all,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+890,,Sorry is Margaret there,Unknown,Nurse,3,FALSE,TRUE
+891,,"Sorry, nobody has brought anything for my supper and it's late",Dietary / Refreshment,food services,5,FALSE,FALSE
+892,,Gran it is your David,Unknown,Nurse,3,FALSE,TRUE
+893,,I do not want to make a fuss Mom I am fine,Unknown,Nurse,3,FALSE,TRUE
+894,,The headphones for the television don't work,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+895,,Wait is this my house or the hospital,Unknown,Nurse,3,FALSE,TRUE
+896,Patient has severe dysphagia and a high aspiration risk,come,Unknown,Nurse,8,TRUE,FALSE
+897,,help,Unknown,Nurse,3,FALSE,TRUE
+898,,I want to leave right now,Unknown,Nurse,3,FALSE,TRUE
+899,,sorry,Unknown,Nurse,4,FALSE,TRUE
+900,,I need my keys right now,Unknown,Nurse,3,FALSE,TRUE
+901,,This is ridiculous I want my own clothes back,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+902,Patient has a history of ventricular arrhythmia,help,Unknown,Nurse,8,TRUE,FALSE
+903,,please,Unknown,Nurse,4,FALSE,TRUE
+904,,I am fed up with being ignored all day,Unknown,Nurse,2,FALSE,TRUE
+905,,Nobody came all night and I could not sleep,Unknown,Nurse,3,FALSE,TRUE
+906,,La la la la,Unknown,Nurse,2,FALSE,TRUE
+907,,Hmm sorry I was just humming,Unknown,Nurse,2,FALSE,TRUE
+908,,Daisy daisy give me your answer do,Unknown,Nurse,2,FALSE,TRUE
+909,,Sorry yes yes that is the one,Unknown,Nurse,2,FALSE,TRUE
+910,,Sorry no no not that one the other,Unknown,Nurse,2,FALSE,TRUE
+911,,Sorry exactly right that is what I think I said,Unknown,Nurse,2,FALSE,TRUE
+912,,No rush what time is it now,Unknown,Nurse,1,FALSE,FALSE
+913,,Sorry is it morning or afternoon,Unknown,Nurse,1,FALSE,FALSE
+914,,Sorry do you know what time it is,Unknown,Nurse,1,FALSE,FALSE
+915,,I hate to bother you how is the lady next door,Unknown,Nurse,3,FALSE,TRUE
+916,,Why hasn't anyone told me about Mr Owen,Unknown,Nurse,3,FALSE,TRUE
+917,,How long do I have to wait to hear about my roommate,Unknown,Nurse,3,FALSE,TRUE
+918,,"Sorry, the soreness is only about a three",Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+919,Patient is on a stroke alert pathway,I can't feel my whole left side at all,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+920,,My incision feels a bit tight,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+921,Patient is on blood thinners,There's blood everywhere and it won't stop,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+922,,I don't want to make a fuss but the IV spot is tender,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+923,Patient has known oesophageal varices,I'm going to vomit blood hurry,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+924,,My pain is holding at about a five,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+925,Patient has a severe peanut allergy,My tongue is swelling and I can't swallow,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+926,,"I'm sick of this, I feel sick to my stomach",Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+927,Patient is one day post gastric bypass,"I'm sick of this, I feel sick to my stomach",Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+928,,The ache is sort of coming back,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+929,Patient has sickle cell disease,The ache is sort of coming back,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+930,,It's ridiculous that my pain dose never came,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+931,Patient takes warfarin and has a high INR,It's ridiculous that my pain dose never came,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+932,,It's probably nothing but the wound is leaking a little,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+933,Patient is neutropenic after chemotherapy,It's probably nothing but the wound is leaking a little,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+934,,I'm kind of shaky since the new pills,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+935,Patient has a documented penicillin allergy,I'm kind of shaky since the new pills,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+936,,My IV arm is swollen and warm,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+937,Patient is receiving chemotherapy through that IV,My IV arm is swollen and warm,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+938,,"I'm sorry, there's a little blood on the gauze",Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+939,Patient has severe asthma,I can't get my breath at all come now,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+940,,I can't feel my whole left side at all,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+941,Patient had a fall overnight with a head strike,I'm choking on my own spit help me,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+942,,I can't get my breath at all come now,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+943,Patient has a known aortic aneurysm,Everything is going grey I'm going to pass out,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+944,,"The bleeding hasn't slowed, come right now",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+945,Patient has heart failure,I can't breathe lying down I'm suffocating,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+946,,It's probably nothing but I took my pills twice,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+947,Patient takes warfarin for a mechanical valve,It's probably nothing but I took my pills twice,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+948,,My incision is killing me and you people are useless,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+949,Patient had a spinal fusion yesterday,My incision is killing me and you people are useless,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+950,,The IV line has come out,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+951,Patient has a central venous catheter,The IV line has come out,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+952,,"This is an emergency, my dressing is soaked",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+953,Patient had a large abdominal wound cleaned out,"This is an emergency, my dressing is soaked",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+954,,"Sorry to bother you, I think I'll be sick",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+955,Patient has a history of bowel obstruction,"Sorry to bother you, I think I'll be sick",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+956,,That machine is beeping,Urgent Clinical / Pain,Nurse,7,TRUE,TRUE
+957,Patient is on a heparin infusion,That machine is beeping,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+958,,Could I keep a second bedpan here by the bed,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+959,,"This is ridiculous, nobody ever comes and I'm bleeding",Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+960,,The pain has taken over and I can barely speak,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+961,,I'm choking on my own spit help me,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+962,,The television remote has gone missing again,Tech Support / Amenities,Unit Clerk / IT Maintenance,2,FALSE,FALSE
+963,,Could I have the plastic jug that goes with the urinal,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+964,,My tongue is swelling and I can't swallow,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+965,,Please take the pan away when you next come in,Toileting,Housekeeping & facilities,2,FALSE,FALSE
+966,,"It's ridiculous that this thing keeps going off, no one checks",Urgent Clinical / Pain,Nurse,6,TRUE,TRUE
+967,,"I keep, um, being sick and can't keep anything down",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+968,,There is a heavy weight sitting on my chest right now,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+969,Patient had a cardiac catheterization this morning,There is a heavy weight sitting on my chest right now,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+970,,The whole room spins every time I lift my head,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+971,Patient received IV morphine an hour ago,The whole room spins every time I lift my head,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+972,,Sorry I am a little winded just sitting here,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+973,Patient has a history of pulmonary embolism,Sorry I am a little winded just sitting here,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+974,,My left arm feels heavy and weak,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+975,Patient has an active stroke protocol order,My left arm feels heavy and weak,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+976,,Sorry I have been sick three times this hour,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+977,Patient is receiving high dose chemotherapy,Sorry I have been sick three times this hour,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+978,,My heart keeps skipping and fluttering,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+979,Patient has a history of atrial fibrillation,My heart keeps skipping and fluttering,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+980,,I cannot remember where I am and nobody has explained anything,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+981,Patient had a fall overnight with a head strike,I cannot remember where I am and nobody has explained anything,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+982,,Sorry to make a fuss but I cannot stop shivering,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+983,Patient is neutropenic following chemotherapy,Sorry to make a fuss but I cannot stop shivering,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+984,,I hate to bother you but my sheets are soaked again,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+985,Patient has a documented lymphoma,I hate to bother you but my sheets are soaked again,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+986,,It is probably nothing but my fingers are tingling,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+987,Patient is on a continuous epidural infusion,It is probably nothing but my fingers are tingling,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+988,,I keep coughing up thick yellow stuff,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+989,Patient had a lung transplant three weeks ago,I keep coughing up thick yellow stuff,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+990,,I cannot move my right leg,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+991,Patient is on a stroke alert pathway,I cannot move my right leg,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+992,,My heart is pounding out of my chest right now,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+993,Patient started a new thyroid medication,My heart is pounding out of my chest right now,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+994,,Everything feels foggy and I cannot make sense of it,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+995,Patient has an elevated ammonia level on file,Everything feels foggy and I cannot make sense of it,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+996,,I am sick of this retching and nobody has come,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+997,Patient is two days post bowel resection,I am sick of this retching and nobody has come,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+998,,I cannot catch my breath right now,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+999,Patient has documented decompensated heart failure,I cannot catch my breath right now,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1000,,My right arm has gone completely limp,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1001,Patient received a thrombolytic one hour ago,My right arm has gone completely limp,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1002,,My foot has been dead for an hour and nobody has looked,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1003,Patient had a nerve block this morning,My foot has been dead for an hour and nobody has looked,Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+1004,,My arm will not lift however hard I try,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1005,Patient has a spinal cord injury at T4,My arm will not lift however hard I try,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1006,,The room keeps tilting when I sit up,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1007,Patient started meclizine for vertigo,The room keeps tilting when I sit up,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1008,,I have thrown up three times and nobody has come to help,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1009,,I'm going to vomit blood hurry,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1010,,My chest is being crushed I can hardly talk,Urgent Clinical / Pain,Nurse,10,TRUE,FALSE
+1011,,Everything is going grey I'm going to pass out,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1012,,The bedside fan has stopped turning,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+1013,,Sorry to bother you my cough is worse with green spit,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1014,,Sorry my whole body will not stop shaking,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1015,,I can't breathe lying down I'm suffocating,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1016,,Nothing is making sense to me,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1017,,Could you change the bag in the waste bin,Room Environment / Cleaning,Housekeeping & facilities,2,FALSE,FALSE
+1018,Patient has known spinal metastases,My back is aching again and I can't get comfortable,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1019,,My back is aching again and I can't get comfortable,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1020,Patient had a spinal fusion two days ago,There's a sharp stabbing pain in my lower back,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1021,,There's a sharp stabbing pain in my lower back,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1022,,"I'm sorry, something's really wrong and I can't explain it",Unknown,Nurse,5,TRUE,TRUE
+1023,Patient had an abdominal aortic aneurysm repaired last week,I've been in pain for hours and nobody has come,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1024,,I've been in pain for hours and nobody has come,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1025,Patient has cirrhosis with tense ascites,I don't want to make a fuss but my belly is sore and I feel feverish,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1026,,I don't want to make a fuss but my belly is sore and I feel feverish,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1027,Patient had a lumbar puncture this morning,My head is pounding and it's worse when I sit up,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1028,,My head is pounding and it's worse when I sit up,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1029,Patient fell and hit their head and is on blood thinners,"It's probably nothing, just a bit of a headache",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1030,,"It's probably nothing, just a bit of a headache",Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+1031,Patient had a stroke two days ago,My vision has gone all blurry here in my left eye,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1032,,My vision has gone all blurry here in my left eye,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1033,Patient has a history of retinal detachment in the other eye,Everything is fuzzy and I see flashes,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1034,,Everything is fuzzy and I see flashes,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1035,Patient had a large blood loss during surgery today,"I'm so dizzy, somebody needs to come immediately",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1036,,"I'm so dizzy, somebody needs to come immediately",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1037,Patient has severe anemia with a hemoglobin of five,I nearly passed out getting up to the bathroom,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1038,,I nearly passed out getting up to the bathroom,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1039,,"Something's wrong, please hurry",Unknown,Nurse,5,TRUE,TRUE
+1040,Patient is on a sliding scale insulin drip,"I told you I was feeling low and nobody came, this is ridiculous",Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1041,,"I told you I was feeling low and nobody came, this is ridiculous",Urgent Clinical / Pain,Nurse,4,TRUE,FALSE
+1042,Patient received a large insulin dose and missed breakfast,My sugar feels low again,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1043,,My sugar feels low again,Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1044,Patient is on chemotherapy and is neutropenic,It burns when I urinate and it's getting worse,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1045,,It burns when I urinate and it's getting worse,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1046,Patient has a kidney transplant and one working kidney,"Sorry to mention it, but there's a bit of blood when I pee",Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1047,,"Sorry to mention it, but there's a bit of blood when I pee",Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1048,Patient had a transurethral resection of the prostate yesterday,How long do I have to wait with this catheter hurting,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1049,,How long do I have to wait with this catheter hurting,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1050,Patient has a suprapubic catheter and a recent bladder repair,"This catheter is driving me mad, I can't take it anymore",Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1051,,"This catheter is driving me mad, I can't take it anymore",Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1052,Patient just received IV contrast and has had a reaction before,"Sorry to bother you, I've a rash all over",Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1053,,"Sorry to bother you, I've a rash all over",Urgent Clinical / Pain,Nurse,5,TRUE,FALSE
+1054,,This rash is spreading fast,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1055,,"It's an emergency, I need someone here now",Unknown,Nurse,5,FALSE,TRUE
+1056,Patient has a history of deep vein thrombosis,It's probably nothing but my left leg looks a bit puffy,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1057,,It's probably nothing but my left leg looks a bit puffy,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1058,,There is no signal on the television this morning,Tech Support / Amenities,Unit Clerk / IT Maintenance,3,FALSE,FALSE
+1059,,I keep saying something is wrong and nobody has listened,Unknown,Nurse,5,TRUE,TRUE
+1060,Patient had a colectomy with an open incision two days ago,There's just a bit of wetness on my bandage and it smells,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1061,,There's just a bit of wetness on my bandage and it smells,Urgent Clinical / Pain,Nurse,6,TRUE,FALSE
+1062,,There's blood everywhere and it won't stop,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1063,,I hate to bother you but my incision won't stop leaking,Urgent Clinical / Pain,Nurse,8,TRUE,FALSE
+1064,Patient received a new blood pressure medicine this morning,My throat feels thick and it's hard to swallow,Urgent Clinical / Pain,Nurse,9,TRUE,FALSE
+1065,,My throat feels thick and it's hard to swallow,Urgent Clinical / Pain,Nurse,7,TRUE,FALSE
+1066,,The tray came with no cutlery again,Dietary / Refreshment,food services,4,FALSE,FALSE
+1067,,I feel awful and I can't tell you what's wrong,Urgent Clinical / Pain,Nurse,5,TRUE,TRUE
