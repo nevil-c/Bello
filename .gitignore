@@ -12,6 +12,10 @@ venv/
 checkpoints/
 runs/
 
+# Decision model generated artifacts (build_dataset.py output, laya-train output)
+decision-model/data/
+decision-model/outputs/
+
 # OS / editor
 .DS_Store
 Thumbs.db
