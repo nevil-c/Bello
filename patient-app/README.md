@@ -2,6 +2,9 @@
 
 The bedside screen. It talks to the Bello LAN server (see ../hospital-dashboard/TRANSCRIPT_SETUP.md): set BELLO_SERVER, BELLO_API_TOKEN, BELLO_ROOM and BELLO_BED, then run `python nurse_call.py`. `run_local.py` instead starts a server on the same machine, for development. CALL records microphone audio, then shows Processing your recording until the server returns the transcript in the language the patient spoke. The server then translates and routes it for staff; the patient is not asked to confirm. Accessibility supports keyboard entry, colour themes, larger text and the screen language. Typed requests are saved without speech recognition.
 
+## Bluetooth
+Set BELLO_TRANSPORT=ble to reach the server over Bluetooth instead of the network (see ../ble-link/README.md). In this mode the recording is sent Opus-compressed, the live partial text is off, and BELLO_SERVER and BELLO_API_TOKEN are not needed on the Pi.
+
 ## Screen language
 Staff choose the Language tile in Accessibility and pick from Whisper's 100 languages. Only the on-screen text changes; speech is always recognised in whatever language the patient speaks. The choice is kept in ~/.bello-patient (BELLO_SETTINGS_DIR). Text comes from the server and is cached on the device. Without the server, Cantonese uses the committed strings_yue.json table and other languages show English. Machine translations of other languages are unreviewed. Install a CJK font on the Pi (`sudo apt install fonts-noto-cjk`) for Chinese.
 

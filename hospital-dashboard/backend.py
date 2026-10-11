@@ -351,13 +351,14 @@ class Handler(BaseHTTPRequestHandler):
         if match[2]=='audio':
             wav=body[:4]==b'RIFF' and body[8:12]==b'WAVE'
             mp3=body[:3]==b'ID3' or (len(body)>1 and body[0]==255 and body[1]&224==224)
-            if not wav and not mp3:return self.send(400,{'error':'Send raw WAV or MP3 bytes'})
+            ogg=body[:4]==b'OggS'   # Opus-compressed recordings from bedside units on Bluetooth
+            if not wav and not mp3 and not ogg:return self.send(400,{'error':'Send raw WAV, MP3 or Ogg bytes'})
             with db() as c:
                 c.execute('BEGIN IMMEDIATE')
                 current=c.execute('SELECT * FROM requests WHERE id=?',(rid,)).fetchone()
                 if current['state'] in ('Queued','Transcribing') or current['transcript'] or c.execute('SELECT 1 FROM deliveries WHERE request_id=?',(rid,)).fetchone():return self.send(409,{'error':'Already transcribing, transcribed, or dispatched. No duplicate job created.'})
                 if c.execute("SELECT COUNT(*) FROM requests WHERE state IN ('Queued','Transcribing')").fetchone()[0]>=4:return self.send(429,{'error':'Transcription queue full. Please wait before retrying.'})
-                ext='wav' if wav else 'mp3';name=f'{rid}-{secrets.token_hex(8)}.{ext}';(DATA/name).write_bytes(body)
+                ext='wav' if wav else 'ogg' if ogg else 'mp3';name=f'{rid}-{secrets.token_hex(8)}.{ext}';(DATA/name).write_bytes(body)
                 c.execute("UPDATE requests SET audio=?,state='Queued',error=NULL WHERE id=?",(name,rid));event(c,rid,'Recording received; queued for local transcription')
             with PREVIEW_LOCK:PREVIEWS.pop(rid,None)
             changed()

@@ -38,6 +38,10 @@ macOS asks once whether Python may accept incoming connections; allow it. The st
 
 **Screen languages.** The bedside Language setting changes the on-screen text only. The spoken language is always detected by Whisper. `GET /api/i18n/<language>` returns the screen strings. A table committed in `patient-app/` wins; Cantonese has one (`strings_yue.json`) because NLLB's Cantonese UI strings were wrong in testing ("Do you want to submit?" came out as "Do you want to surrender?"). Any other language is translated by NLLB once, then cached in `transcript-data/i18n/`. These are unreviewed machine translations; commit a reviewed `strings_<code>.json` to replace one. NLLB-200 is licensed CC-BY-NC 4.0 (non-commercial).
 
+## Bedside unit over Bluetooth
+
+When the hospital Wi-Fi blocks the Pi from reaching the server, connect them over Bluetooth instead. Run the server with `--host 127.0.0.1`, start the relay on the same Mac, and start the Pi with `BELLO_TRANSPORT=ble`. See [../ble-link/README.md](../ble-link/README.md). Recordings arrive as Ogg/Opus, which the server accepts alongside WAV and MP3.
+
 ## Bedside units (Raspberry Pi)
 
 Install only the patient app (see [../patient-app/README.md](../patient-app/README.md)), plus `fonts-noto-cjk` so Chinese text renders, then point it at the server:

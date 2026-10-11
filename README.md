@@ -5,5 +5,6 @@
 - Patient bell app (bedside Pi): [patient-app/](patient-app/README.md)
 - LAN server (speech, translation, routing): [hospital-dashboard/](hospital-dashboard/README.md)
 - Staff apps (clerk dashboard, department inbox, admin analytics; Python): [staff-app/](staff-app/README.md)
+- Bluetooth link between the bedside Pi and the server: [ble-link/](ble-link/README.md)
 - Cloud archive for analytics: [aws-backend/](aws-backend/README.md)
 - Request routing decision model: [decision-model/](decision-model/README.md)
