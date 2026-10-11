@@ -54,6 +54,27 @@ class PiAdapterTests(unittest.TestCase):
         server.update_value = update_and_deliver
         self.assertEqual(link.request('GET', '/api/requests', timeout=10), (200, 'application/json', b'{"ok": 1}'))
 
+class RelayStartupTests(unittest.TestCase):
+    def link(self, states):
+        with patch.dict(sys.modules, {'bless': fake_bless}):
+            import pi_link
+            link = pi_link.PiLink().start()
+        FakeBlessServer.instance.is_connected = lambda: asyncio.sleep(0, next(states))
+        return pi_link, link
+
+    def test_request_waits_for_a_relay_that_connects_shortly_after_startup(self):
+        # The app asks for the bed's open requests the moment it starts, seconds before the relay's scan finds the Pi.
+        pi_link, link = self.link(iter([False, False, False, True] + [True] * 20))
+        link.requester.request = lambda *a: asyncio.sleep(0, (200, 'application/json', b'{"open": 0}'))
+        with patch('pi_link.CONNECT_WAIT', 10), patch('pi_link.time.sleep', lambda s: None):
+            self.assertEqual(link.request('GET', '/api/rooms/open?room=1', timeout=5)[0], 200)
+
+    def test_request_gives_up_when_no_relay_ever_connects(self):
+        pi_link, link = self.link(iter([False] * 1000))
+        with patch('pi_link.CONNECT_WAIT', 0):
+            with self.assertRaisesRegex(protocol.LinkError, 'not connected over Bluetooth'):
+                link.request('GET', '/api/rooms/open?room=1', timeout=5)
+
 class FakeBleakClient:
     instance = None
     def __init__(self, device, disconnected_callback):

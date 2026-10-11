@@ -13,6 +13,7 @@ import time
 from protocol import CHUNK_SIZE, SERVICE_UUID, TO_PI_UUID, TO_SERVER_UUID, LinkError, Requester
 
 NAME = os.environ.get('BELLO_BLE_NAME', 'Bello bedside')
+CONNECT_WAIT = float(os.environ.get('BELLO_BLE_CONNECT_WAIT', '30'))   # seconds a request waits for the relay
 
 class PiLink:
     def __init__(self, chunk_size=CHUNK_SIZE):
@@ -87,7 +88,9 @@ class PiLink:
 
     def request(self, method, path, body=b'', content_type='application/json', timeout=150):
         """(status, content type, body) from the server, or LinkError. Safe to call from any thread."""
-        if not self.connected():
+        # The relay scans for up to 20 s before it connects, and again after any drop, so the first
+        # requests at startup (and any made during a reconnect) wait for it rather than failing.
+        if not self.wait_connected(CONNECT_WAIT):
             raise LinkError('The Bello server is not connected over Bluetooth. Check that the relay is running on the server.')
         future = asyncio.run_coroutine_threadsafe(self.requester.request(method, path, body or b'', content_type, timeout), self.loop)
         try:
@@ -98,8 +101,9 @@ class PiLink:
 
     def wait_connected(self, seconds):
         end = time.monotonic() + seconds
-        while time.monotonic() < end:
+        while True:
             if self.connected():
                 return True
+            if time.monotonic() >= end:
+                return False
             time.sleep(.5)
-        return False
