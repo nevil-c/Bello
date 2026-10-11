@@ -47,6 +47,14 @@ CREATE TABLE history(id INTEGER PRIMARY KEY,request_id INTEGER,event TEXT,create
         s.sync_once(self.connect,self.cfg);self.assertEqual(s.sync_once(self.connect,self.cfg),(0,True))
         with self.connect() as c:c.execute("INSERT INTO history(request_id,event,created) VALUES(1,'Department acknowledged',12.0)")
         self.assertEqual(s.sync_once(self.connect,self.cfg),(1,True));self.assertEqual(Archive.received[-1][2]['version'],12.0)
+    def test_patient_feedback_reaches_the_archive(self):
+        with self.connect() as c:
+            c.execute("INSERT INTO feedback VALUES(1,5,'Just in time',NULL,20.0)")
+            c.execute("INSERT INTO history(request_id,event,created) VALUES(1,'Patient satisfaction feedback received',20.0)")
+        self.assertEqual(s.sync_once(self.connect,self.cfg),(1,True))
+        body=Archive.received[-1][2]
+        self.assertEqual(body['version'],20.0)
+        self.assertEqual(body['feedback']['rating'],5);self.assertEqual(body['feedback']['resolution_answer'],'Just in time')
     def test_server_error_retries_later(self):
         Archive.status=500;self.assertEqual(s.sync_once(self.connect,self.cfg),(0,False))
         Archive.status=200;self.assertEqual(s.sync_once(self.connect,self.cfg),(1,True))
