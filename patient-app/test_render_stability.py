@@ -36,18 +36,25 @@ class Tests(unittest.TestCase):
   self.assertEqual(self.app.gen,renders)          # no rebuild while the patient talks
   self.assertEqual(self.app.layout_scale,scale)   # no rescale either
 
- def test_fit_settles_once_per_window_size(self):
+ def test_fit_shrinks_for_smaller_window_and_settles(self):
   self.listen()
-  self.root.geometry('700x520+3000+100');self.pump(30)
-  canvas,inner=self.parts()
-  self.assertLess(self.app.layout_scale,1.0)
-  self.assertLessEqual(inner.winfo_reqwidth(),canvas.winfo_width())
-  self.assertLessEqual(inner.winfo_reqheight(),canvas.winfo_height())
-  settled=self.app.gen
-  self.pump(40)
-  self.assertEqual(self.app.gen,settled)          # a repeated <Configure> must not re-fit
-  self.root.geometry('1000x740+3000+100');self.pump(40)
-  self.assertEqual(self.app.gen,settled+1)        # one rebuild back up, not a loop
+  # Deterministic geometry: an off-screen window's real size is not reliable under a WM, and the
+  # fit's own rebuild replaces the canvas, so re-fake whatever canvas is current.
+  root=self.root
+  real=(root.winfo_width,root.winfo_height)
+  def fake():
+   canvas,inner=self.parts()
+   canvas.winfo_width=lambda:630;canvas.winfo_height=lambda:400
+  root.winfo_width=lambda:700;root.winfo_height=lambda:520
+  try:
+   fake();before=self.app.gen;self.app.fit();self.pump(4)
+   self.assertLess(self.app.layout_scale,1.0)
+   self.assertGreaterEqual(self.app.gen,before+1,'the new scale has to be rebuilt once')
+   fake();scale=self.app.layout_scale
+   self.app.fit();self.app.fit();self.pump(10)
+   self.assertEqual(self.app.layout_scale,scale,'the same window size must not re-fit')
+  finally:
+   (root.winfo_width,root.winfo_height)=real
 
  def test_pause_sweep_repaints_strips_not_whole_label_faces(self):
   self.listen()

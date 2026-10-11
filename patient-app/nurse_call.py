@@ -31,6 +31,7 @@ DEMO_SPEECH = "My back is hurting and I need help sitting up."
 # the point of being unreadable (it clips instead).
 MIN_CANVAS = 200
 MIN_LAYOUT_SCALE = 0.20
+SLOW_REBUILD_MS = 50   # report a screen build slower than this; the Pi vs the Mac numbers
 
 THEMES = {
     "standard": dict(bg="#FFFFFF", ink="#14232B", muted="#5A6B73", line="#D3DDE1",
@@ -166,8 +167,10 @@ class App:
         self.voice = Voice(demo)
         self.dpi = root.winfo_fpixels("1i") / 96.0
         self.layout_scale = 1.0
-        self.layout_key = None
-        self.fit_for = None      # canvas size the current layout_scale was fitted to
+        self.built_key = None    # (screen, chrome) currently built
+        self.chrome_key = None   # theme/large/a11y the current chrome was built for
+        self.built_gen = 0       # gen the current content belongs to
+        self.fit_for = None      # window size the current layout_scale was fitted to
 
         self.screen = "home"     # home | listen | type
         self.state = "speaking"  # speaking | listening | sent | nothing   (listen screen)
@@ -209,6 +212,12 @@ class App:
         root.bind("<Escape>", self.on_escape)
         root.bind("<space>", self.on_call_key)
         root.bind("<Return>", self.on_call_key)
+
+        # Says what the device this runs on actually reports; the UI is tuned against it.
+        print(f"UI: Tk {root.tk.call('info', 'patchlevel')}, "
+              f"session {'wayland' if os.environ.get('WAYLAND_DISPLAY') else os.environ.get('DISPLAY', 'none')}, "
+              f"screen {root.winfo_screenwidth()}x{root.winfo_screenheight()}, "
+              f"dpi {self.dpi:.2f}, scale {self.layout_scale:.3f}", flush=True)
 
         self.render()
         self.poll()
@@ -260,75 +269,105 @@ class App:
                         bg=self.t[bg], wraplength=self.px(wrap) if wrap else 0, justify="center")
 
     # ---- drawing
-    def render(self):
-        key = (self.screen, self.state, self.large, self.a11y_open)
-        resized = key != self.layout_key
-        if resized:
-            self.layout_key = key
-            self.layout_scale = 1.0
-            self.fit_for = None
+    def render(self, force=False):
+        # A rebuild destroys and re-creates every widget, and each Tk widget is its own X window:
+        # on a Pi without a compositor you watch them get unmapped and remapped one by one, which
+        # is the flash on every press. So: reuse the chrome, rebuild only the content, and for a
+        # state change on the same screen reconfigure the widgets we already have.
+        chrome_key = (self.large, self.a11y_open, self.filter_i)
+        content_key = (self.screen, chrome_key)
+        rechrome = force or self.chrome_key != chrome_key
+        recontent = rechrome or self.built_key != content_key
         self.gen += 1
-        self.words_label = None
         self.pause_started = None
         self.pause_display = 0.0
         self.cancel_progress = None
         self.background_sweep = None
         self.mic_visual = None
-        for w in self.root.winfo_children():
-            w.destroy()
+        if not recontent:
+            # Same screen, new state. The content is current for this generation, so the layout
+            # and fit handlers must keep working (they are keyed on it).
+            self.built_gen = self.gen
+            self.refresh()
+            return
+        self.built_key = content_key
+        self.chrome_key = chrome_key
+        started = time.perf_counter()
         t = self.t
-        self.root.configure(bg=t["bg"])
-
-        top = tk.Frame(self.root, bg=t["bg"])
-        top.pack(fill="x", padx=self.px(24), pady=(self.px(16), 0))
-        self.label(top, f"Room {ROOM}   ·   Bed {BED}", 17, color="muted").pack(side="left")
-        self.a11y_button(top).pack(side="right")
-
-        body = tk.Frame(self.root, bg=t["bg"])
-        body.pack(fill="both", expand=True, padx=self.px(32), pady=self.px(12))
-        canvas=tk.Canvas(body,bg=t['bg'],highlightthickness=0)
-        canvas.pack(fill='both',expand=True)
-        inner=tk.Frame(canvas,bg=t['bg'])
-        window=canvas.create_window(0,0,window=inner,anchor='n')
-        generation=self.gen
-        def fit():
-            # Scale to the space the window actually has, and only to that: content that merely
-            # grew (a longer partial transcript) must never rescale and rebuild the whole screen.
-            # Keyed on the WINDOW size, not the canvas: shrinking the layout also shrinks the
-            # px()-scaled header, which changes the canvas under us and re-triggers this forever.
-            if generation!=self.gen or not canvas.winfo_exists():return
-            window=(self.root.winfo_width(),self.root.winfo_height())
-            if min(window)<=MIN_CANVAS or window==self.fit_for:return
-            available=(canvas.winfo_width(),canvas.winfo_height())
-            if min(available)<=MIN_CANVAS:return
-            required_w=max(1,inner.winfo_reqwidth())/self.layout_scale
-            required_h=max(1,inner.winfo_reqheight())/self.layout_scale
-            target=max(MIN_LAYOUT_SCALE,min(1.0,(available[0]-8)/required_w,(available[1]-8)/required_h))
-            self.fit_for=window
-            if abs(target-self.layout_scale)>.005:
-                self.layout_scale=target
-                self.render()
-        def layout(event=None):
-            if generation!=self.gen or not canvas.winfo_exists():return
-            w,h=canvas.winfo_width(),canvas.winfo_height()
-            needed=inner.winfo_reqheight()
-            canvas.coords(window,w/2,max(0,(h-needed)/2))
-            if event is not None and event.widget is canvas and w>10 and h>10:
-                # Debounced: a resize fires <Configure> before the canvas has its new size, and
-                # measuring the old one leaves the layout fitted to the wrong space.
-                self.root.after(60,fit)
-        canvas.bind('<Configure>',layout)
-        inner.bind('<Configure>',layout)
-        for event in ('<MouseWheel>','<Button-4>','<Button-5>'):
-            self.root.unbind(event)
-        getattr(self, "draw_" + self.screen)(inner)
-        if resized:
-            self.root.after_idle(fit)
-
+        if rechrome:
+            # No layout_scale reset: the fit owns it, and resetting here would discard the scale
+            # the fit just measured (it rebuilds through this path) and pop the page every time.
+            for w in self.root.winfo_children():
+                w.destroy()
+            self.root.configure(bg=t["bg"])
+            top = tk.Frame(self.root, bg=t["bg"])
+            top.pack(fill="x", padx=self.px(24), pady=(self.px(16), 0))
+            self.label(top, f"Room {ROOM}   ·   Bed {BED}", 17, color="muted").pack(side="left")
+            self.a11y_button(top).pack(side="right")
+            body = tk.Frame(self.root, bg=t["bg"])
+            body.pack(fill="both", expand=True, padx=self.px(32), pady=self.px(12))
+            self.canvas = tk.Canvas(body, bg=t["bg"], highlightthickness=0)
+            self.canvas.pack(fill="both", expand=True)
+            self.inner = tk.Frame(self.canvas, bg=t["bg"])
+            self.window = self.canvas.create_window(0, 0, window=self.inner, anchor="n")
+            self.canvas.bind("<Configure>", self.layout)
+            self.inner.bind("<Configure>", self.layout)
+            for event in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+                self.root.unbind(event)
+        else:
+            for w in self.inner.winfo_children():
+                w.destroy()
+            self.words_label = None
+        self.built_gen = self.gen
+        getattr(self, "draw_" + self.screen)(self.inner)
+        slow = (time.perf_counter() - started) * 1000
+        if slow > SLOW_REBUILD_MS:
+            # Visible on the device when the layout cannot keep up: paste this line.
+            print(f"UI: rebuilding the {self.screen} screen took {slow:.0f} ms", flush=True)
         if self.a11y_open:
             self.draw_a11y()
-        if self.screen=="listen" and self.state=="listening":
-            self.root.after(33,self.animate_pause_background,self.flow,self.gen)
+        self.root.after_idle(self.fit)
+        if self.screen == "listen" and self.state == "listening":
+            self.root.after(33, self.animate_pause_background, self.flow, self.gen)
+
+    def refresh(self):
+        """Reconfigure the current screen in place; screens without a refresh redraw instead."""
+        fn = getattr(self, "refresh_" + self.screen, None)
+        if fn is None:
+            self.render(force=True)
+            return
+        fn()
+
+    def fit(self):
+        # Scale to the space the window actually has, and only to that: content that merely
+        # grew (a longer partial transcript) must never rescale and rebuild the whole screen.
+        # Keyed on the WINDOW size, not the canvas: shrinking the layout also shrinks the
+        # px()-scaled header, which changes the canvas under us and re-triggers this forever.
+        # Fitted once per (window size, screen): a fit must never trigger itself, or px()
+        # truncation makes each pass a little smaller and the page creeps down a full rebuild
+        # at a time.
+        if self.built_gen != self.gen or not self.canvas.winfo_exists(): return
+        window = (self.root.winfo_width(), self.root.winfo_height())
+        if min(window) <= MIN_CANVAS or (window, self.built_key) == self.fit_for: return
+        available = (self.canvas.winfo_width(), self.canvas.winfo_height())
+        if min(available) <= MIN_CANVAS: return
+        required_w = max(1, self.inner.winfo_reqwidth()) / self.layout_scale
+        required_h = max(1, self.inner.winfo_reqheight()) / self.layout_scale
+        target = max(MIN_LAYOUT_SCALE, min(1.0, (available[0] - 8) / required_w, (available[1] - 8) / required_h))
+        self.fit_for = (window, self.built_key)
+        if abs(target - self.layout_scale) > .005:
+            self.layout_scale = target
+            self.render(force=True)
+
+    def layout(self, event=None):
+        if self.built_gen != self.gen or not self.canvas.winfo_exists(): return
+        w, h = self.canvas.winfo_width(), self.canvas.winfo_height()
+        needed = self.inner.winfo_reqheight()
+        self.canvas.coords(self.window, w / 2, max(0, (h - needed) / 2))
+        if event is not None and event.widget is self.canvas and w > 10 and h > 10:
+            # Debounced: a resize fires <Configure> before the canvas has its new size, and
+            # measuring the old one leaves the layout fitted to the wrong space.
+            self.root.after(60, self.fit)
 
     def a11y_button(self, parent):
         t = self.t
@@ -362,21 +401,41 @@ class App:
             self.button(f, "Rate my last service", self.open_feedback, size=19).pack(pady=self.px(12))
 
     def draw_listen(self, f):
+        # Built once with every widget any state can use, then refresh_listen() shows/hides and
+        # retitles them. Rebuilding this per state meant 15 widgets unmapped and remapped for a
+        # change of one sentence.
+        t = self.t
+        self.listen_title = self.label(f, "", 34, True, wrap=860)
+        self.mic_canvas, self.mic_disc = self.draw_mic(f, active=False)
+        self.listen_hint = self.label(f, "", 22)
+        # Reserved box: a growing transcript used to reflow the page and push Cancel off screen.
+        # Height is a calibration knob -- four lines of the 28pt words font.
+        self.listen_box = tk.Frame(f, bg=t["soft"], padx=self.px(28), pady=self.px(20),
+                                   highlightbackground=t["line"], highlightthickness=2,
+                                   width=self.px(706), height=self.px(200))
+        self.listen_box.pack_propagate(False)
+        self.words_label = tk.Label(self.listen_box, text="", font=self.font(28), fg=t["muted"],
+                                    bg=t["soft"], wraplength=self.px(650), width=0, justify="center")
+        self.words_label.pack()
+        self.listen_actions = tk.Frame(f, bg=t["bg"])
+        self.listen_submit = self.button(self.listen_actions, "Submit request", self.send_empty, size=24)
+        self.listen_retry = self.button(self.listen_actions, "Try again", self.ask, size=24)
+        self.listen_rate_note = self.label(self.listen_actions, "After you receive help, you can rate the service.", 17, color="muted")
+        self.listen_rate = self.button(self.listen_actions, "Rate my service", self.open_feedback, size=20)
+        self.listen_leave = self.button(self.listen_actions, "✕   Cancel", self.cancel, size=24)
+        self.refresh_listen()
+
+    def refresh_listen(self):
         t = self.t
         st = self.state
-        title = {"speaking": "Please state your concern.",
-                 "listening": "Please state your concern.",
-                 "paused": "Please state your concern.",
-                 "processing": "Sending your message…",
-                 "error": "Message was not confirmed.",
-                 "sent": "Your message has been sent.",
-                 "empty": "Empty request detected.",
-                 "nothing": "No message was sent."}[st]
-        self.label(f, title, 34, True, wrap=860).pack()
-
-        if self.screen == "listen" and not self.keyboard and st in ("speaking", "listening", "paused"):
-            self.draw_mic(f, active=(st == "listening"))
-
+        self.listen_title.configure(text={"speaking": "Please state your concern.",
+                                          "listening": "Please state your concern.",
+                                          "paused": "Please state your concern.",
+                                          "processing": "Sending your message…",
+                                          "error": "Message was not confirmed.",
+                                          "sent": "Your message has been sent.",
+                                          "empty": "Empty request detected.",
+                                          "nothing": "No message was sent."}[st], fg=t["ink"], bg=t["bg"])
         hint = {"speaking": "Please wait…",
                 "listening": "Stop talking to send your request",
                 "paused": "Paused",
@@ -385,30 +444,34 @@ class App:
                 "sent": "",
                 "empty": "Do you want to submit?",
                 "nothing": "I couldn't hear a message."}[st]
+        self.listen_hint.configure(text=hint, font=self.font(22, st == "listening"),
+                                   fg=t["listen"] if st == "listening" else t["muted"], bg=t["bg"])
+        self.mic_canvas.itemconfigure(self.mic_disc,
+                                      fill=t["listen"] if st == "listening" else blend(t["listen"], t["bg"], .45))
+        self.words_label.configure(
+            text="No words were detected." if st == "empty" else self.words or "Your words will show here",
+            font=self.font(28, bool(self.words)), fg=t["ink"] if self.words else t["muted"])
+        # Re-pack in reading order: pack() appends, so a partial re-pack would reorder the page.
+        for w in (self.listen_title, self.mic_canvas, self.listen_hint, self.listen_box,
+                  self.listen_actions, self.listen_submit, self.listen_retry, self.listen_rate_note,
+                  self.listen_rate, self.listen_leave):
+            w.pack_forget()
+        self.listen_title.pack()
+        if self.screen == "listen" and not self.keyboard and st in ("speaking", "listening", "paused"):
+            self.mic_canvas.pack(pady=self.px(4))
         if hint:
-            self.label(f, hint, 22, st == "listening",
-                       color="listen" if st == "listening" else "muted").pack()
-
-        # Reserved box: a growing transcript used to reflow the page and push Cancel off screen.
-        # Height is a calibration knob -- four lines of the 28pt words font.
-        box = tk.Frame(f, bg=t["soft"], padx=self.px(28), pady=self.px(20),
-                       highlightbackground=t["line"], highlightthickness=2,
-                       width=self.px(706), height=self.px(200))
-        box.pack(pady=(self.px(18), 0))
-        box.pack_propagate(False)
-        text = "No words were detected." if st == "empty" else self.words or "Your words will show here"
-        self.words_label = tk.Label(box, text=text, font=self.font(28, bool(self.words)),
-                                    fg=t["ink"] if self.words else t["muted"], bg=t["soft"],
-                                    wraplength=self.px(650), width=0, justify="center")
-        self.words_label.pack()
-
+            self.listen_hint.pack()
+        self.listen_box.pack(pady=(self.px(18), 0))
+        self.listen_actions.pack()
         if st == "empty":
-            self.button(f, "Submit request", self.send_empty, size=24).pack(pady=self.px(8))
-            self.button(f, "Try again", self.ask, size=24).pack(pady=self.px(8))
+            self.listen_submit.pack(pady=self.px(8))
+            self.listen_retry.pack(pady=self.px(8))
         if st == "sent" and self.request_id and self.request_id not in self.feedback_done:
-            self.label(f, "After you receive help, you can rate the service.", 17, color="muted").pack()
-            self.button(f, "Rate my service", self.open_feedback, size=20).pack(pady=self.px(8))
-        self.button(f, "Done" if st == "sent" else "✕   Cancel", self.cancel, size=24, danger=False).pack(pady=(self.px(16), 0))
+            self.listen_rate_note.pack()
+            self.listen_rate.pack(pady=self.px(8))
+        # button() returns the bordered holder frame; the label lives in its only child.
+        self.listen_leave.winfo_children()[0].configure(text="Done" if st == "sent" else "✕   Cancel")
+        self.listen_leave.pack(pady=(self.px(16), 0))
 
     def on_pause_progress(self, flow, progress):
         if flow!=self.flow or self.state!='listening':return
@@ -445,14 +508,14 @@ class App:
         canvas.tag_raise('mic')
 
     def draw_mic(self, f, active):
+        """Draws the microphone; the caller packs it, and refresh_listen() recolours it."""
         t = self.t
         size = self.px(230)
         c = tk.Canvas(f, width=size, height=size, bg=t["bg"], highlightthickness=0)
-        c.pack(pady=self.px(4))
         r = self.px(70)
         cx = cy = size / 2
         fill = t["listen"] if active else blend(t["listen"], t["bg"], .45)
-        c.create_oval(cx - r, cy - r, cx + r, cy + r, fill=fill, outline="", tags="mic")
+        disc = c.create_oval(cx - r, cy - r, cx + r, cy + r, fill=fill, outline="", tags="mic")
         u, w = self.px(1), max(3, self.px(5))
         c.create_rectangle(cx - 14 * u, cy - 40 * u, cx + 14 * u, cy + 8 * u, fill=t["on"], outline="", tags="mic")
         c.create_oval(cx - 14 * u, cy - 54 * u, cx + 14 * u, cy - 26 * u, fill=t["on"], outline="", tags="mic")
@@ -460,7 +523,8 @@ class App:
         c.create_arc(cx - 30 * u, cy - 26 * u, cx + 30 * u, cy + 34 * u, start=180, extent=180,
                      style="arc", outline=t["on"], width=w, tags="mic")
         c.create_line(cx, cy + 34 * u, cx, cy + 50 * u, fill=t["on"], width=w, tags="mic")
-        if active:self.mic_visual=(c,cx,cy,r)
+        self.mic_visual = (c, cx, cy, r)
+        return c, disc
 
     def draw_type(self, f):
         t = self.t
