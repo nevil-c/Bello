@@ -275,8 +275,14 @@ def submit_text(text, room):
     return new_request(room,text=text)
 
 def submit_feedback(request_id, rating, resolution_answer, comment=''):
-    return api(f'/api/requests/{request_id}/feedback',json.dumps({
-        'rating':rating,'resolution_answer':resolution_answer,'comment':comment}).encode())
+    try:
+        return api(f'/api/requests/{request_id}/feedback',json.dumps({
+            'rating':rating,'resolution_answer':resolution_answer,'comment':comment}).encode())
+    except RuntimeError as error:
+        # The server keeps one answer per request. A second send (a double press, or a Bluetooth
+        # reply that was lost after the server had saved it) means the first one arrived.
+        if 'already submitted' in str(error).lower():return {'request_id':request_id,'duplicate':True}
+        raise
 
 
 def submit_empty(room):
