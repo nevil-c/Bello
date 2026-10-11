@@ -1,7 +1,7 @@
 """Bello cloud archive: API Gateway -> Lambda -> DynamoDB.
 
-One item per patient request, keyed by site and request id. The Pi pushes a full
-snapshot of each request (transcript, routing, acknowledgments, feedback, history)
+One item per patient request, keyed by site and request id. The LAN server pushes a full
+snapshot of each request (transcripts, model routing, calls, resolution, feedback, history)
 with PUT; a newer `version` replaces an older one, so retries and replays are safe.
 Request contents are never written to logs.
 """
@@ -48,7 +48,8 @@ def analytics_rows(site,item):
     Column names match the Glue tables in template.yaml."""
     history=sorted(item['history'],key=lambda h:h['created'])
     delivery=item['deliveries'][0] if item['deliveries'] else None
-    created=history[0]['created'] if history else None
+    created=item.get('created') if item.get('created') is not None else history[0]['created'] if history else None
+    resolved,called=item.get('resolved'),item.get('called')
     delivered=delivery['created'] if delivery else None
     acked=next((h['created'] for h in history if h['event'].startswith('Department acknowledged')),None)
     feedback=item['feedback']
@@ -56,6 +57,11 @@ def analytics_rows(site,item):
         'delivered_department':delivery['department'] if delivery else None,'language':item['language'],'state':item['state'],'transcript':item['transcript'],
         'created_at':stamp(created) if created is not None else None,'delivered_at':stamp(delivered) if delivered is not None else None,'acknowledged_at':stamp(acked) if acked is not None else None,
         'minutes_to_deliver':minutes(created,delivered),'minutes_to_acknowledge':minutes(delivered,acked),
+        'transcript_en':item.get('transcript_en'),'ui_language':item.get('ui_language'),'category':item.get('category'),
+        'urgency':int(item['urgency']) if item.get('urgency') is not None else None,
+        'urgency_confidence':float(item['urgency_confidence']) if item.get('urgency_confidence') is not None else None,'more_info_needed':item.get('more_info_needed'),'review':item.get('review'),
+        'call_placed_at':stamp(called) if called is not None else None,'resolved_at':stamp(resolved) if resolved is not None else None,
+        'minutes_to_call':minutes(created,called),'minutes_to_resolve':minutes(created,resolved),
         'rating':feedback['rating'] if feedback else None,'resolution_answer':feedback['resolution_answer'] if feedback else None,'feedback_comment':feedback['comment'] if feedback else None,
         'version':float(item['version']),'synced_at':stamp(item['synced_at'])}
     events=[{'site_id':site,'request_id':item['request_id'],'event':h['event'],'event_at':stamp(h['created'])} for h in history]
@@ -84,6 +90,12 @@ def number(value,name):
     if isinstance(value,bool) or not isinstance(value,(int,float,Decimal)):raise Bad(f'{name} must be a number')
     return Decimal(str(value))
 
+def optional_number(value,name,low,high):
+    if value is None:return None
+    value=number(value,name)
+    if not low<=value<=high:raise Bad(f'{name} must be between {low} and {high}')
+    return value
+
 def clean(rid,payload):
     """Validate the Pi's snapshot and keep only the fields the archive stores."""
     if not isinstance(payload,dict):raise Bad('JSON object required')
@@ -99,8 +111,21 @@ def clean(rid,payload):
         'recommended':text(payload.get('recommended'),60,'recommended',False),
         'transcript':text(payload.get('transcript'),20000,'transcript',False),
         'language':text(payload.get('language'),20,'language',False),
+        'transcript_en':text(payload.get('transcript_en'),20000,'transcript_en',False),
+        'ui_language':text(payload.get('ui_language'),20,'ui_language',False),
+        'category':text(payload.get('category'),60,'category',False),
+        'review':text(payload.get('review'),300,'review',False),
+        'urgency_confidence':optional_number(payload.get('urgency_confidence'),'urgency_confidence',0,1),
+        'created':optional_number(payload.get('created'),'created',0,1e11),
+        'resolved':optional_number(payload.get('resolved'),'resolved',0,1e11),
+        'called':optional_number(payload.get('called'),'called',0,1e11),
         'deliveries':[],'history':[],'feedback':None,
     }
+    urgency=payload.get('urgency')
+    if urgency is not None and (type(urgency) is not int or urgency not in range(1,11)):raise Bad('urgency must be an integer 1-10')
+    more_info=payload.get('more_info_needed')
+    if more_info is not None and not isinstance(more_info,bool):raise Bad('more_info_needed must be true, false or null')
+    item.update(urgency=urgency,more_info_needed=more_info)
     for d in deliveries:
         if not isinstance(d,dict):raise Bad('each delivery must be an object')
         item['deliveries'].append({'id':text(d.get('id'),64,'delivery id'),'department':text(d.get('department'),60,'department'),'status':text(d.get('status'),60,'delivery status'),'created':number(d.get('created'),'delivery created'),'transcript':text(d.get('transcript'),20000,'delivery transcript',False)})

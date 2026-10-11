@@ -34,14 +34,19 @@ def ensure_schema(c):
 
 def pending(c):
     """Requests with activity newer than the last archived version, oldest first.
-    Sample requests with no history are never sent."""
+    Sample requests with no history, and demo rows (backend.py --seed-demo), are never sent."""
     return c.execute('''SELECT r.id,MAX(h.created) AS version FROM requests r JOIN history h ON h.request_id=r.id
-LEFT JOIN cloud_sync s ON s.request_id=r.id GROUP BY r.id HAVING s.version IS NULL OR MAX(h.created)>s.version ORDER BY r.id''').fetchall()
+LEFT JOIN cloud_sync s ON s.request_id=r.id WHERE COALESCE(r.sample_text,'')!='Demo request'
+GROUP BY r.id HAVING s.version IS NULL OR MAX(h.created)>s.version ORDER BY r.id''').fetchall()
 
 def record(c,rid,version):
-    r=c.execute('SELECT id,room,recommended,transcript,language,state FROM requests WHERE id=?',(rid,)).fetchone()
+    r=dict(c.execute('SELECT * FROM requests WHERE id=?',(rid,)).fetchone())
     feedback=c.execute('SELECT rating,resolution_answer,comment,created FROM feedback WHERE request_id=?',(rid,)).fetchone()
+    more_info=r.get('more_info_needed')
     return {'request_id':r['id'],'version':version,'room':r['room'],'recommended':r['recommended'],'transcript':r['transcript'],'language':r['language'],'state':r['state'],
+        'transcript_en':r.get('transcript_en'),'ui_language':r.get('ui_language'),'category':r.get('category'),'urgency':r.get('urgency'),
+        'urgency_confidence':r.get('urgency_confidence'),'more_info_needed':None if more_info is None else bool(more_info),
+        'review':r.get('review'),'created':r.get('created'),'resolved':r.get('resolved'),'called':r.get('called'),
         'deliveries':[dict(d) for d in c.execute('SELECT id,department,status,created,transcript FROM deliveries WHERE request_id=? ORDER BY created',(rid,))],
         'feedback':dict(feedback) if feedback else None,
         'history':[dict(h) for h in c.execute('SELECT event,created FROM history WHERE request_id=? ORDER BY id',(rid,))]}

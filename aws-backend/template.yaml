@@ -142,6 +142,17 @@ Resources:
           - {Name: rating, Type: int}
           - {Name: resolution_answer, Type: string}
           - {Name: feedback_comment, Type: string}
+          - {Name: transcript_en, Type: string}
+          - {Name: ui_language, Type: string}
+          - {Name: category, Type: string}
+          - {Name: urgency, Type: int}
+          - {Name: urgency_confidence, Type: double}
+          - {Name: more_info_needed, Type: boolean}
+          - {Name: review, Type: string}
+          - {Name: call_placed_at, Type: timestamp}
+          - {Name: resolved_at, Type: timestamp}
+          - {Name: minutes_to_call, Type: double}
+          - {Name: minutes_to_resolve, Type: double}
           - {Name: version, Type: double}
           - {Name: synced_at, Type: timestamp}
 

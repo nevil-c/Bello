@@ -4,7 +4,12 @@ from unittest.mock import patch
 import backend as b
 class Tests(unittest.TestCase):
  def setUp(self):
-  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);b.ROOT=Path(self.tmp.name);b.DATA=b.ROOT/'data';(b.ROOT/'dist').mkdir();(b.ROOT/'dist/index.html').write_text("{id:8,request:'Sample blanket request',urgency:2,room:'203 B'}");b.initialize()
+  self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);b.DATA=Path(self.tmp.name)/'data';b.initialize()
+  with b.db() as c:c.execute("INSERT INTO requests(id,room,state,created) VALUES(8,'203 B','Awaiting recording',1.0)")
+ def get(self,path,token=True):
+  h=object.__new__(b.Handler);h.path=path;h.headers={}
+  if token:h.headers['X-Bello-Token']=b.TOKEN
+  out=[];h.send=lambda *args:out.append(args);h.do_GET();return out[0]
  def post(self,path,body=b'',token=True):
   h=object.__new__(b.Handler);h.path=path;h.headers={'Content-Length':str(len(body))};h.rfile=io.BytesIO(body)
   if token:h.headers['X-Bello-Token']=b.TOKEN
@@ -44,7 +49,7 @@ class Tests(unittest.TestCase):
   created=self.post('/api/requests',json.dumps({'room':'412 · B','text':'  Water please  '}).encode())
   self.assertEqual(created[0],201);rid=created[1]['request_id']
   self.assertEqual(created[1]['transcript'],'Water please')
-  self.assertEqual(created[1]['state'],'Ready to send')
+  self.assertEqual(created[1]['state'],'Classifying')
   with b.db() as c:
    row=c.execute('SELECT * FROM requests WHERE id=?',(rid,)).fetchone()
   self.assertEqual(row['transcript'],'Water please');self.assertEqual(row['room'],'412 · B')
