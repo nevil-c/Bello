@@ -18,7 +18,8 @@ class BackgroundSweep:
                     widget.tag_lower(rect)
                     self.surfaces.append((widget,'canvas',rect,None))
                 elif isinstance(widget,tk.Label):
-                    self.surfaces.append((widget,'label',None,(widget.winfo_width(),widget.winfo_height())))
+                    # [bitmap, extent already painted, size the bitmap was cut for]
+                    self.surfaces.append((widget,'label',[None,0,None],None))
             for child in children:collect(child)
         collect(root)
 
@@ -31,8 +32,16 @@ class BackgroundSweep:
             if kind=='frame':item.place_configure(width=extent)
             elif kind=='canvas':widget.coords(item,0,0,extent,height)
             else:
-                photo=tk.PhotoImage(width=max(1,width),height=max(1,height))
-                photo.put(self.base,to=(0,0,max(1,width),max(1,height)))
-                if extent:photo.put(self.colour,to=(0,0,extent,max(1,height)))
-                widget.configure(image=photo,compound='center',padx=0,pady=0)
-                widget._sweep_image=photo
+                # Cut one bitmap per label and repaint one strip per frame. Rebuilding the whole
+                # face every frame is what the Pi's software X server cannot keep up with.
+                # bd=0: a label's border is added to the image when sizing it, so the label would
+                # grow 2px per side, the bitmap would be re-cut bigger, and it would never settle.
+                if item[0] is None or item[2]!=(width,height):
+                    item[0]=tk.PhotoImage(width=max(1,width),height=max(1,height))
+                    item[2]=(width,height);item[1]=0
+                    widget.configure(image=item[0],compound='center',padx=0,pady=0,bd=0)
+                    widget._sweep_image=item[0]
+                if extent!=item[1]:
+                    item[0].put(self.colour if extent>item[1] else self.base,
+                                to=(min(extent,item[1]),0,max(extent,item[1]),max(1,height)))
+                    item[1]=extent
