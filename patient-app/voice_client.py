@@ -1,7 +1,13 @@
-"""Microphone capture and authenticated Bello upload. Provider keys stay on server."""
+"""Microphone capture and authenticated Bello upload. Provider keys stay on server.
+
+BELLO_TRANSPORT  http (default): talk to BELLO_SERVER over the network.
+                 ble: talk over Bluetooth LE to the relay on the server (../ble-link). Recordings are sent
+                 Opus-compressed and the live partial text is off.
+"""
 import io
 import json
 import os
+import sys
 import time
 import threading
 import queue
@@ -13,6 +19,9 @@ from urllib.parse import urlencode
 # The patient screen's language (set from the accessibility menu). Sent with each request; the
 # server still detects the spoken language itself.
 UI_LANGUAGE='en'
+TRANSPORT=os.environ.get('BELLO_TRANSPORT','http')
+_link=None
+_link_lock=threading.Lock()
 
 class Cancelled(Exception):
     pass
@@ -20,7 +29,34 @@ class Cancelled(Exception):
 def new_request(room,**fields):
     return api('/api/requests',json.dumps({'room':room,'ui_language':UI_LANGUAGE,**fields}).encode())
 
+def ble_link():
+    """The Bluetooth link, started once. The Pi starts advertising as soon as the app opens."""
+    global _link
+    with _link_lock:
+        if _link is None:
+            sys.path.insert(0,os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','ble-link'))
+            from pi_link import PiLink
+            _link=PiLink().start()
+    return _link
+
+def start_transport():
+    if TRANSPORT=='ble':
+        try:ble_link()
+        except Exception as error:print(f'Bluetooth unavailable: {error}',file=sys.stderr,flush=True)
+
+def ble_api(path, body, content_type, timeout):
+    from protocol import LinkError
+    try:
+        status,_,data=ble_link().request('POST' if body is not None else 'GET',path,body,content_type,timeout)
+    except LinkError as error:
+        raise RuntimeError(str(error)) from None
+    try:payload=json.loads(data) if data else {}
+    except ValueError:payload={}
+    if status>=400:raise RuntimeError(payload.get('error','Upload failed'))
+    return payload
+
 def api(path, body=None, content_type='application/json', timeout=150):
+    if TRANSPORT=='ble':return ble_api(path,body,content_type,timeout)
     token=os.environ.get('BELLO_API_TOKEN')
     if not token:
         raise RuntimeError('Configure BELLO_API_TOKEN before starting the patient app.')
@@ -38,7 +74,10 @@ def submit_audio(audio, room, cancel, request_id=None):
     if cancel.is_set(): raise Cancelled()
     request={'request_id':request_id} if request_id is not None else new_request(room)
     if cancel.is_set(): raise Cancelled()
-    result=api('/api/requests/%s/audio'%request['request_id'],audio,'audio/wav')
+    if TRANSPORT=='ble':
+        result=api('/api/requests/%s/audio'%request['request_id'],compress(audio),'audio/ogg')
+    else:
+        result=api('/api/requests/%s/audio'%request['request_id'],audio,'audio/wav')
     return wait_for_transcript(request['request_id'],cancel)
 
 def wait_for_transcript(request_id,cancel,timeout=600):
@@ -51,6 +90,39 @@ def wait_for_transcript(request_id,cancel,timeout=600):
         if result['state']=='Retry required':raise RuntimeError(result.get('error') or 'Local transcription failed.')
         cancel.wait(1)
     raise RuntimeError(f'Request {request_id} is still unconfirmed. Check the clerk dashboard before recording again.')
+
+def compress(wav):
+    """WAV -> Ogg/Opus at 24 kbps (about 3 KB per second of speech), for the Bluetooth link.
+    Falls back to FFmpeg's own Opus encoder, then lossless FLAC, if this PyAV lacks libopus."""
+    import av
+    import numpy as np
+    with wave.open(io.BytesIO(wav)) as source:
+        rate=source.getframerate();pcm=np.frombuffer(source.readframes(source.getnframes()),dtype=np.int16)
+    for codec,options in (('libopus',{'b':'24000'}),('opus',{'b':'24000','strict':'experimental'}),('flac',{})):
+        try:return encode_ogg(pcm,rate,codec,options)
+        except Exception:continue
+    raise RuntimeError('No audio encoder available for the Bluetooth link')
+
+def encode_ogg(pcm,rate,codec,options):
+    import av
+    import numpy as np
+    out=io.BytesIO()
+    with av.open(out,'w',format='ogg') as container:
+        stream=container.add_stream(codec,rate=48000 if codec=='opus' else rate,options=options)
+        stream.layout='mono'
+        resampler=av.AudioResampler(format=stream.format.name if stream.format else 's16',layout='mono',rate=stream.rate)
+        step=rate//50   # 20 ms frames, the size Opus encodes
+        for start in range(0,len(pcm),step):
+            block=pcm[start:start+step]
+            if len(block)<step:block=np.pad(block,(0,step-len(block)))
+            frame=av.AudioFrame.from_ndarray(block.reshape(1,-1),format='s16',layout='mono')
+            frame.sample_rate=rate;frame.pts=start
+            for converted in resampler.resample(frame):
+                for packet in stream.encode(converted):container.mux(packet)
+        for converted in resampler.resample(None):
+            for packet in stream.encode(converted):container.mux(packet)
+        for packet in stream.encode(None):container.mux(packet)
+    return out.getvalue()
 
 def recording_chime(rate):
     """A one-second bell with a soft attack and a silent, smooth tail."""
@@ -170,6 +242,7 @@ def capture_batch(room,cancel,on_words,on_processing,on_pause=None,on_level=None
         except Exception as error:setup_error.append(error)
         finally:ready.set()
         if setup_error:return
+        if TRANSPORT=='ble':return  # no live partial text over Bluetooth
         previous=''
         while not stopped.is_set() and not cancel.is_set():
             with lock:audio=latest[0];latest[0]=None
@@ -181,7 +254,8 @@ def capture_batch(room,cancel,on_words,on_processing,on_pause=None,on_level=None
             except Exception:pass  # Optional partials must never block the final recording.
             stopped.wait(.5)
     thread=threading.Thread(target=previews,daemon=True);thread.start()
-    try:audio=record(cancel,snapshot,on_pause=on_pause,on_level=on_level) if on_pause or on_level else record(cancel,snapshot)
+    live=snapshot if TRANSPORT!='ble' else None
+    try:audio=record(cancel,live,on_pause=on_pause,on_level=on_level) if on_pause or on_level else record(cancel,live)
     finally:stopped.set();thread.join(timeout=1)
     if cancel.is_set():raise Cancelled()
     if audio is None:return None

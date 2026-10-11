@@ -1,0 +1,2 @@
+# Server machine (MacBook): BLE central on CoreBluetooth
+bleak>=1.0,<4

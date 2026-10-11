@@ -1073,6 +1073,8 @@ def main():
             ctypes.windll.shcore.SetProcessDpiAwareness(1)
         except Exception:
             pass
+    if "--demo" not in sys.argv:
+        voice_client.start_transport()   # over Bluetooth, start advertising before the first call
     root = tk.Tk()
     App(root, demo="--demo" in sys.argv)
     root.mainloop()

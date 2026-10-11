@@ -17,7 +17,7 @@ export BELLO_SERVER=http://<server>:8766
 python3 staff-app/clerk.py
 ```
 
-Each app asks for the access token when it starts. Set `BELLO_API_TOKEN` to skip the prompt on a staff computer you trust. On a Raspberry Pi or other Linux machine, install Tkinter (`sudo apt install python3-tk`) and `fonts-noto-cjk` for Chinese text. Use a screen at least 1400 pixels wide for the clerk dashboard.
+When the bedside Pi connects over Bluetooth, the server listens only on the Mac itself: use `BELLO_SERVER=http://127.0.0.1:8766`. Each app asks for the access token when it starts. Set `BELLO_API_TOKEN` to skip the prompt on a staff computer you trust. On a Raspberry Pi or other Linux machine, install Tkinter (`sudo apt install python3-tk`) and `fonts-noto-cjk` for Chinese text. Use a screen at least 1400 pixels wide for the clerk dashboard.
 
 The clerk dashboard updates as soon as anything changes, over the server's event stream. If the stream fails three times in a row it polls every two seconds instead; the pill at the top right shows which (Live, Live (polling), Reconnecting…). The admin dashboard refreshes every minute and shows an error, rather than stale numbers, if the archive cannot be reached.
 
