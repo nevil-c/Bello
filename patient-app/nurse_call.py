@@ -981,7 +981,14 @@ class App:
         if error is None:
             self.feedback_done.add(rid)
         self.feedback_notice = error or tr("feedback_saved")
-        if self.screen == "feedback" and self.request_id == rid:
+        if self.screen != "feedback" or self.request_id != rid:
+            return
+        if error is None:
+            # Saved on the server: nothing left to do here, so go home and say thank you there.
+            # A failure stays on the survey with its error, so the answers are not lost.
+            self.staff_notice = self.feedback_notice
+            self.cancel()
+        else:
             self.render()
 
     def type_char(self, ch):
