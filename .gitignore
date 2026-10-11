@@ -17,3 +17,7 @@ runs/
 Thumbs.db
 .vscode/
 .idea/
+
+# AWS SAM
+aws-backend/.aws-sam/
+aws-backend/samconfig.toml
