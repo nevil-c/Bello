@@ -9,6 +9,7 @@ server on this machine, sending the answer back. Reconnects whenever the link dr
 import asyncio
 import json
 import os
+import subprocess
 import sys
 import time
 from urllib.error import HTTPError, URLError
@@ -33,6 +34,25 @@ def forward(method, path, body, content_type, server=SERVER, token=None):
 def log(text):
     print(time.strftime('%H:%M:%S ') + text, flush=True)
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# The staff apps need a Python with Tkinter; this one runs the relay, which needs Bluetooth and no
+# Tk. Override if your Tk Python lives elsewhere (BELLO_NO_APPS=1 just runs the relay).
+TK_PYTHON = os.environ.get('BELLO_TK_PYTHON', '/opt/homebrew/bin/python3')
+
+def open_apps():
+    """Open the care queue and the department inbox beside the relay: one command starts the demo."""
+    if os.environ.get('BELLO_NO_APPS'):
+        log('BELLO_NO_APPS set: not opening the staff apps.')
+        return
+    python = TK_PYTHON if os.path.exists(TK_PYTHON) else sys.executable
+    for name in ('clerk.py', 'inbox.py'):
+        try:
+            subprocess.Popen([python, os.path.join(ROOT, 'staff-app', name)], env=dict(os.environ, BELLO_SERVER=SERVER))
+        except OSError as error:
+            log(f'Could not open {name}: {error}')
+            return
+    log(f'Opened the care queue and the department inbox ({python} → {SERVER})')
+
 async def serve_once():
     from bleak import BleakClient, BleakScanner
     log('Looking for the bedside unit…')
@@ -54,6 +74,7 @@ async def serve_once():
 async def main():
     if not os.environ.get('BELLO_API_TOKEN'):
         sys.exit('Set BELLO_API_TOKEN to the token the Bello server was started with.')
+    open_apps()
     while True:
         try:
             await serve_once()
