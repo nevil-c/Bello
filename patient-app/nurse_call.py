@@ -14,7 +14,7 @@ Microphone audio is uploaded to the Bello backend for local speech recognition t
 Install requirements.txt and configure BELLO_SERVER and BELLO_API_TOKEN.
 """
 import os
-from voice_client import capture_and_submit, record, submit_audio, submit_text, submit_feedback, Cancelled
+from voice_client import capture_and_submit, record, submit_audio, submit_text, submit_empty, submit_feedback, Cancelled
 import queue
 import subprocess
 import sys
@@ -82,6 +82,9 @@ class Voice:
 
     def __init__(self, demo=False):
         self.demo = demo
+        if not demo and os.environ.get("BELLO_LIVE_ENGINE","whisper")=="vosk":
+            from streaming_stt import load_model
+            load_model()
         self.windows = sys.platform == "win32"
         self.q = queue.Queue()
         self._proc = None
@@ -107,32 +110,11 @@ class Voice:
             p.kill()
 
     def say(self, text, then=None):
-        def work():
-            if self.windows:
-                p = self._start(SAY_PS.replace("{text}", text.replace("'", "''")))
-                if p:
-                    p.wait()
-            elif sys.platform == "darwin":
-                try:
-                    p = subprocess.Popen(["/usr/bin/say", text], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    with self._lock:
-                        self._proc = p
-                    p.wait()
-                except OSError:
-                    pass
-            else:
-                try:
-                    import pyttsx3
-                    engine = pyttsx3.init()
-                    engine.say(text)
-                    engine.runAndWait()
-                except Exception:
-                    pass
-            self.q.put((then, ()))
+        """Keep existing screen transitions without producing any audio."""
         self.stop()
-        threading.Thread(target=work, daemon=True).start()
+        if then:self.q.put((then, ()))
 
-    def listen(self, on_words, on_done, on_error, on_processing):
+    def listen(self, on_words, on_done, on_error, on_processing, on_pause, on_level):
         self.stop()
         cancel = threading.Event()
         self._cancel = cancel
@@ -144,7 +126,9 @@ class Voice:
                 else:
                     result = capture_and_submit(f"{ROOM} · {BED}", cancel,
                         lambda text: self.q.put((on_words, (text,))),
-                        lambda: self.q.put((on_processing, ())))
+                        lambda: self.q.put((on_processing, ())),
+                        lambda progress: self.q.put((on_pause, (progress,))),
+                        lambda level: self.q.put((on_level, (level,))))
                     if result is None:
                         self.q.put((on_done, (None,)))
                         return
@@ -188,6 +172,11 @@ class App:
         self.gen = 0             # bumps on every redraw (stops old animations)
         self.typed = tk.StringVar()
         self.words_label = None
+        self.pause_started = None
+        self.pause_display = 0.0
+        self.cancel_progress = None
+        self.background_sweep = None
+        self.mic_visual = None
         self.request_id = None
         self.feedback_done = set()
         self.feedback_busy = False
@@ -215,7 +204,11 @@ class App:
     # ---- helpers
     @property
     def t(self):
-        return THEMES[FILTERS[self.filter_i][0]]
+        theme=THEMES[FILTERS[self.filter_i][0]]
+        if self.screen=='listen' and self.state in ('processing','sent'):
+            return dict(theme,bg='#B7E4C7' if self.state=='sent' else '#D8F3DC',
+                        soft='#D8F3DC' if self.state=='sent' else theme['soft'])
+        return theme
 
     def px(self, n):
         return int(n * self.dpi)
@@ -258,6 +251,11 @@ class App:
     def render(self):
         self.gen += 1
         self.words_label = None
+        self.pause_started = None
+        self.pause_display = 0.0
+        self.cancel_progress = None
+        self.background_sweep = None
+        self.mic_visual = None
         for w in self.root.winfo_children():
             w.destroy()
         t = self.t
@@ -296,6 +294,8 @@ class App:
 
         if self.a11y_open:
             self.draw_a11y()
+        if self.screen=="listen" and self.state=="listening":
+            self.root.after(33,self.animate_pause_background,self.flow,self.gen)
 
     def a11y_button(self, parent):
         t = self.t
@@ -331,12 +331,13 @@ class App:
     def draw_listen(self, f):
         t = self.t
         st = self.state
-        title = {"speaking": "I'm listening.",
-                 "listening": "I'm listening.",
-                 "paused": "I'm listening.",
+        title = {"speaking": "Please state your concern.",
+                 "listening": "Please state your concern.",
+                 "paused": "Please state your concern.",
                  "processing": "Sending your message…",
                  "error": "Message was not confirmed.",
-                 "sent": "Your message has been received.",
+                 "sent": "Your message has been sent.",
+                 "empty": "Empty request detected.",
                  "nothing": "No message was sent."}[st]
         self.label(f, title, 34, True, wrap=860).pack()
 
@@ -344,11 +345,12 @@ class App:
             self.draw_mic(f, active=(st == "listening"))
 
         hint = {"speaking": "Please wait…",
-                "listening": "Tell me what you need",
+                "listening": "Stop talking to send your request",
                 "paused": "Paused",
                 "processing": "Saving your message" if self.keyboard else "Processing your recording",
                 "error": "Please try again or use your bedside call bell.",
                 "sent": "",
+                "empty": "Do you want to submit?",
                 "nothing": "I couldn't hear a message."}[st]
         if hint:
             self.label(f, hint, 22, st == "listening",
@@ -357,16 +359,53 @@ class App:
         box = tk.Frame(f, bg=t["soft"], padx=self.px(28), pady=self.px(20),
                        highlightbackground=t["line"], highlightthickness=2)
         box.pack(pady=(self.px(18), 0))
-        text = self.words or "Your words will show here"
+        text = "No words were detected." if st == "empty" else self.words or "Your words will show here"
         self.words_label = tk.Label(box, text=text, font=self.font(28, bool(self.words)),
                                     fg=t["ink"] if self.words else t["muted"], bg=t["soft"],
                                     wraplength=self.px(650), width=0, justify="center")
         self.words_label.pack()
 
+        if st == "empty":
+            self.button(f, "Submit request", self.send_empty, size=24).pack(pady=self.px(8))
+            self.button(f, "Try again", self.ask, size=24).pack(pady=self.px(8))
         if st == "sent" and self.request_id and self.request_id not in self.feedback_done:
             self.label(f, "After you receive help, you can rate the service.", 17, color="muted").pack()
             self.button(f, "Rate my service", self.open_feedback, size=20).pack(pady=self.px(8))
-        self.button(f, "Done" if st == "sent" else "✕   Cancel", self.cancel, size=24, danger=st != "sent").pack(pady=(self.px(16), 0))
+        self.button(f, "Done" if st == "sent" else "✕   Cancel", self.cancel, size=24, danger=False).pack(pady=(self.px(16), 0))
+
+    def on_pause_progress(self, flow, progress):
+        if flow!=self.flow or self.state!='listening':return
+        if progress<=0:self.pause_started=None
+        elif self.pause_started is None:
+            self.pause_started=time.monotonic()-min(1,progress)*2
+
+    def animate_pause_background(self, flow, generation):
+        if flow!=self.flow or generation!=self.gen or self.state!='listening':return
+        # Animate on the UI clock, independently of the microphone's 100 ms blocks.
+        target=0.0 if self.pause_started is None else min(.98,(time.monotonic()-self.pause_started)/2)
+        self.pause_display+=(target-self.pause_display)*.4
+        if target==0 and self.pause_display<.005:self.pause_display=0
+        if not self.a11y_open and (self.pause_display>0 or self.background_sweep is not None):
+            if self.background_sweep is None:
+                from background_sweep import BackgroundSweep
+                self.root.update_idletasks()
+                self.background_sweep=BackgroundSweep(self.root,self.t['bg'],'#D8F3DC')
+            self.background_sweep.update(self.pause_display)
+        self.root.after(33,self.animate_pause_background,flow,generation)
+
+    def on_volume(self, flow, level):
+        if flow!=self.flow or self.state!='listening' or not self.mic_visual:return
+        canvas,cx,cy,r=self.mic_visual
+        if not canvas.winfo_exists():return
+        canvas.delete('ring')
+        if level<=0:return
+        import math
+        strength=max(0,min(1,math.log1p(level/220)/math.log1p(20)))
+        for offset,fade in ((12,.15),(25,.55)):
+            radius=r+self.px(offset+strength*18)
+            canvas.create_oval(cx-radius,cy-radius,cx+radius,cy+radius,
+                outline=blend(self.t['listen'],self.t['bg'],fade),width=self.px(4),tags='ring')
+        canvas.tag_raise('mic')
 
     def draw_mic(self, f, active):
         t = self.t
@@ -384,21 +423,7 @@ class App:
         c.create_arc(cx - 30 * u, cy - 26 * u, cx + 30 * u, cy + 34 * u, start=180, extent=180,
                      style="arc", outline=t["on"], width=w, tags="mic")
         c.create_line(cx, cy + 34 * u, cx, cy + 50 * u, fill=t["on"], width=w, tags="mic")
-        if active:
-            self.animate_rings(c, cx, cy, r, self.gen, 0.0)
-
-    def animate_rings(self, c, cx, cy, r, g, phase):
-        if g != self.gen or not c.winfo_exists():
-            return
-        c.delete("ring")
-        t = self.t
-        for k in (0.0, 0.5):
-            p = (phase + k) % 1.0
-            rr = r + p * self.px(44)
-            c.create_oval(cx - rr, cy - rr, cx + rr, cy + rr,
-                          outline=blend(t["listen"], t["bg"], p), width=self.px(4), tags="ring")
-        c.tag_raise("mic")
-        self.root.after(40, self.animate_rings, c, cx, cy, r, g, phase + 0.02)
+        if active:self.mic_visual=(c,cx,cy,r)
 
     def draw_type(self, f):
         t = self.t
@@ -425,7 +450,7 @@ class App:
         self.key(row, "Space", lambda: self.type_char(" "), 14).pack(side="left", padx=self.px(3))
         self.key(row, "Send", self.send_typed, 7, send=True).pack(side="left", padx=self.px(3))
 
-        self.button(f, "✕   Cancel", self.cancel, size=24, danger=True).pack(pady=(self.px(10), 0))
+        self.button(f, "✕   Cancel", self.cancel, size=24, danger=False).pack(pady=(self.px(10), 0))
 
     def key(self, parent, text, cmd, width=3, send=False):
         t = self.t
@@ -515,7 +540,9 @@ class App:
         self.state = "listening"
         self.render()
         self.voice.listen(lambda text: self.on_words(f, text), lambda text, rid=None: self.on_done(f, text, rid),
-                          lambda error: self.on_error(f, error), lambda: self.on_processing(f))
+                          lambda error: self.on_error(f, error), lambda: self.on_processing(f),
+                          lambda progress: self.on_pause_progress(f, progress),
+                          lambda level: self.on_volume(f, level))
 
     def on_processing(self, f):
         if f == self.flow:
@@ -546,19 +573,25 @@ class App:
             self.words = text[0].upper() + text[1:]
             self.state = "sent"
             self.render()
-            self.voice.say("Thank you. Your message is saved for the unit clerk.")
-        elif self.tries == 0:
-            self.tries += 1
-            self.words = ""
-            self.flow += 1
-            f = self.flow
-            self.state = "speaking"
-            self.render()
-            self.voice.say("I didn't hear you. Please try again.", then=lambda: self.begin_listen(f))
         else:
-            self.state = "nothing"
+            self.words=""
+            self.state="empty"
             self.render()
-            self.voice.say("No message was sent. Please use your bedside call bell.")
+            self.voice.say("Empty request detected. Do you want to submit?")
+
+    def send_empty(self):
+        if self.state != 'empty':return
+        self.voice.stop()
+        self.flow+=1
+        flow=self.flow
+        self.state='processing'
+        self.render()
+        def work():
+            try:
+                result=submit_empty(f"{ROOM} · {BED}")
+                self.voice.q.put((self.on_done,(flow,result['transcript'],result['request_id'])))
+            except Exception as error:self.voice.q.put((self.on_error,(flow,str(error))))
+        threading.Thread(target=work,daemon=True).start()
 
     def send_typed(self):
         msg = self.typed.get().strip()
@@ -613,9 +646,7 @@ class App:
             stars=self.label(card,'★'*n,17,True);stars.configure(fg=colour);stars.pack()
             face.bind('<Button-1>',lambda e,value=n: self.select_rating(value))
             face.configure(cursor='hand2')
-            tk.Radiobutton(card,text=str(n),variable=self.rating,value=n,command=lambda value=n:self.select_rating(value),
-                           font=self.font(26,True),bg=self.t['bg'],fg=self.t['ink'],
-                           selectcolor=self.t['soft'],state='disabled' if self.feedback_busy else 'normal').pack()
+            self.label(card,str(n),26,True).pack()
             self.label(card,title,17,wrap=150).pack()
             self.rating_cards.append((n,card,face,colour))
             for target in [card]+[w for w in card.winfo_children() if not isinstance(w,tk.Radiobutton)]:
@@ -624,10 +655,18 @@ class App:
         self.refresh_rating_highlight()
         self.label(f, "Was your request resolved?", 27, True).pack(pady=(self.px(20), 0))
         row = tk.Frame(f, bg=self.t['bg']); row.pack()
+        self.resolution_cards=[]
         for value, title in [('yes', 'Yes'), ('no', 'No')]:
-            tk.Radiobutton(row, text=title, variable=self.resolution, value=value,
-                           font=self.font(26,True), bg=self.t['bg'], fg=self.t['ink'],
-                           selectcolor=self.t['soft'], state='disabled' if self.feedback_busy else 'normal').pack(side='left', padx=self.px(10))
+            card=tk.Frame(row,bg=self.t['bg'],highlightthickness=self.px(3),highlightbackground=self.t['bg'])
+            card.pack(side='left',padx=self.px(10))
+            button=tk.Button(card,text=title,font=self.font(26,True),
+                             command=lambda answer=value:self.select_resolution(answer),
+                             bg=self.t['bg'],fg=self.t['ink'],relief='flat',bd=0,
+                             padx=self.px(24),pady=self.px(8),highlightthickness=0,
+                             state='disabled' if self.feedback_busy else 'normal',cursor='hand2')
+            button.pack()
+            self.resolution_cards.append((value,card,button))
+        self.refresh_resolution_highlight()
         self.label(f, "Comment (optional)", 22).pack(pady=(self.px(14), 0))
         tk.Entry(f, textvariable=self.comment, width=32, font=self.font(22),
                  state='disabled' if self.feedback_busy else 'normal').pack()
@@ -657,6 +696,18 @@ class App:
                 ink='#FFFFFF' if chosen else colour
                 if face.type(item)=='arc':face.itemconfigure(item,outline=ink)
                 else:face.itemconfigure(item,fill=ink)
+
+    def select_resolution(self, answer):
+        if self.feedback_busy:return
+        self.resolution.set(answer)
+        self.refresh_resolution_highlight()
+
+    def refresh_resolution_highlight(self):
+        for answer,card,button in self.resolution_cards:
+            chosen=self.resolution.get()==answer
+            bg=self.t['soft'] if chosen else self.t['bg']
+            card.configure(bg=bg,highlightbackground=self.t['ink'] if chosen else self.t['bg'])
+            button.configure(bg=bg,activebackground=bg)
 
     def send_feedback(self):
         if self.feedback_busy or self.request_id in self.feedback_done:

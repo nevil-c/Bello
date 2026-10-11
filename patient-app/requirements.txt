@@ -1,2 +1,6 @@
 sounddevice>=0.5,<1
 pyttsx3>=2.98,<3; sys_platform != "darwin"
+
+webrtcvad-wheels>=2.0.14,<3
+
+av>=11,<17

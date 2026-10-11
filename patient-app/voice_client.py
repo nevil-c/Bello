@@ -4,6 +4,7 @@ import json
 import os
 import time
 import threading
+import queue
 import wave
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
@@ -38,12 +39,13 @@ def wait_for_transcript(request_id,cancel,timeout=600):
         if cancel.is_set():raise Cancelled()
         result=api(f'/api/requests/{request_id}')
         if result.get('transcript'):return result
+        if result['state']=='Retry required' and result.get('error')=='No speech detected. No transcript was saved.':return None
         if result['state']=='Retry required':raise RuntimeError(result.get('error') or 'Local transcription failed.')
         cancel.wait(1)
     raise RuntimeError(f'Request {request_id} is still unconfirmed. Check the clerk dashboard before recording again.')
 
 def play_recording_ding(sd):
-    """Sustained local chime; playback finishes before microphone capture."""
+    """One-second chime played alongside microphone capture."""
     try:
         import numpy as np
         rate=16000
@@ -58,31 +60,73 @@ def play_recording_ding(sd):
     except Exception:
         pass  # An unavailable speaker must not prevent microphone recording.
 
-def record(cancel, on_audio=None):
+def microphone_settings(sd):
+    """Prefer recognition rate, falling back to the microphone's native rate."""
+    device=os.environ.get('BELLO_INPUT_DEVICE')
+    if device is not None and device.isdigit():device=int(device)
+    try:
+        sd.check_input_settings(device=device,samplerate=16000,channels=1,dtype='int16')
+        return device,16000
+    except sd.PortAudioError:
+        rate=int(sd.query_devices(device,'input')['default_samplerate'])
+        sd.check_input_settings(device=device,samplerate=rate,channels=1,dtype='int16')
+        return device,rate
+
+class MicrophonePCM:
+    """Stateful, filtered conversion to exact 100 ms recognition blocks."""
+    def __init__(self,rate):
+        self.rate=rate
+        self.pending=bytearray()
+        if rate!=16000:
+            import av
+            self.resampler=av.AudioResampler(format='s16',layout='mono',rate=16000)
+    def read(self,stream,cancel):
+        while len(self.pending)<3200:
+            if cancel.is_set():raise Cancelled()
+            data,overflow=stream.read(self.rate//10)
+            if overflow:raise RuntimeError('Microphone audio was interrupted. Please try again.')
+            if self.rate==16000:self.pending.extend(bytes(data))
+            else:
+                import av
+                import numpy as np
+                frame=av.AudioFrame.from_ndarray(np.frombuffer(bytes(data),dtype=np.int16).reshape(1,-1),format='s16',layout='mono')
+                frame.sample_rate=self.rate
+                for converted in self.resampler.resample(frame):
+                    self.pending.extend(converted.to_ndarray().tobytes())
+        result=bytes(self.pending[:3200]);del self.pending[:3200]
+        return result
+
+def record(cancel, on_audio=None, on_pcm=None, on_pause=None,on_level=None):
     try:
         import sounddevice as sd
     except ImportError:
         raise RuntimeError('Microphone support is missing. Install patient-app/requirements.txt.') from None
-    sd.check_input_settings(samplerate=16000,channels=1,dtype='int16')
-    play_recording_ding(sd)
+    device,rate=microphone_settings(sd)
+    pcm=MicrophonePCM(rate)
     if cancel.is_set():raise Cancelled()
-    chunks=[]; started=time.monotonic(); last_voice=None; last_partial=started
-    # 16 kHz mono signed 16-bit PCM; stop after 2 seconds of silence following speech.
-    with sd.RawInputStream(samplerate=16000,channels=1,dtype='int16',blocksize=1600) as stream:
+    from speech_activity import SpeechActivity
+    activity=SpeechActivity()
+    from noise_suppression import NoiseSuppressor
+    suppressor=NoiseSuppressor()
+    denoise=os.environ.get("BELLO_NOISE_SUPPRESSION","1")!="0"
+    chunks=[]; started=time.monotonic(); last_partial=started
+    # Preserve all audio, but end on two seconds without detected speech, even with background noise.
+    with sd.RawInputStream(device=device,samplerate=rate,channels=1,dtype='int16',blocksize=rate//10) as stream:
+        threading.Thread(target=play_recording_ding,args=(sd,),daemon=True).start()
         while time.monotonic()-started<30:
             if cancel.is_set(): raise Cancelled()
-            data,overflow=stream.read(1600)
-            if overflow: raise RuntimeError('Microphone audio was interrupted. Please try again.')
-            raw=bytes(data);chunks.append(raw)
-            import struct
-            values=struct.unpack('<%dh'%(len(raw)//2),raw)
-            rms=(sum(v*v for v in values)/len(values))**.5
-            if rms>350: last_voice=time.monotonic()
-            if on_audio and last_voice and time.monotonic()-last_partial>=3:
+            raw=pcm.read(stream,cancel)
+            endpoint=activity.accept(raw)
+            cleaned=suppressor.process(raw,activity.speech) if denoise else raw
+            chunks.append(cleaned)
+            if on_pcm:on_pcm(cleaned)
+            if on_pause:on_pause(activity.pause_progress)
+            if on_level:on_level(activity.rms if activity.speech else 0.0)
+            if on_audio and activity.last_speech is not None and time.monotonic()-last_partial>=3:
                 on_audio(wav_bytes(chunks));last_partial=time.monotonic()
-            if last_voice and time.monotonic()-last_voice>2: break
-            if last_voice is None and time.monotonic()-started>10: return None
-    if last_voice is None: return None
+            if endpoint=='done':break
+            if endpoint=='empty':return None
+    if activity.last_speech is None:return None
     return wav_bytes(chunks)
 
 def wav_bytes(chunks):
@@ -91,12 +135,18 @@ def wav_bytes(chunks):
         wav.setnchannels(1);wav.setsampwidth(2);wav.setframerate(16000);wav.writeframes(b''.join(chunks))
     return out.getvalue()
 
-def capture_and_submit(room,cancel,on_words,on_processing):
-    request_id=api('/api/requests',json.dumps({'room':room}).encode())['request_id']
+def capture_batch(room,cancel,on_words,on_processing,on_pause=None,on_level=None):
+    # Backend setup runs in parallel; it must not delay microphone activation.
+    request_id=None;setup_error=[];ready=threading.Event()
     stopped=threading.Event();lock=threading.Lock();latest=[None]
     def snapshot(audio):
         with lock:latest[0]=audio
     def previews():
+        nonlocal request_id
+        try:request_id=api('/api/requests',json.dumps({'room':room}).encode())['request_id']
+        except Exception as error:setup_error.append(error)
+        finally:ready.set()
+        if setup_error:return
         previous=''
         while not stopped.is_set() and not cancel.is_set():
             with lock:audio=latest[0];latest[0]=None
@@ -108,11 +158,14 @@ def capture_and_submit(room,cancel,on_words,on_processing):
             except Exception:pass  # Optional partials must never block the final recording.
             stopped.wait(.5)
     thread=threading.Thread(target=previews,daemon=True);thread.start()
-    try:audio=record(cancel,snapshot)
+    try:audio=record(cancel,snapshot,on_pause=on_pause,on_level=on_level) if on_pause or on_level else record(cancel,snapshot)
     finally:stopped.set();thread.join(timeout=1)
     if cancel.is_set():raise Cancelled()
     if audio is None:return None
     on_processing()
+    while not ready.wait(.1):
+        if cancel.is_set():raise Cancelled()
+    if setup_error:raise setup_error[0]
     return submit_audio(audio,room,cancel,request_id=request_id)
 
 
@@ -122,3 +175,46 @@ def submit_text(text, room):
 def submit_feedback(request_id, rating, resolution_answer, comment=''):
     return api(f'/api/requests/{request_id}/feedback',json.dumps({
         'rating':rating,'resolution_answer':resolution_answer,'comment':comment}).encode())
+
+
+def submit_empty(room):
+    return api('/api/requests',json.dumps({'room':room,'confirmed_empty':True}).encode())
+
+
+def capture_and_submit(room,cancel,on_words,on_processing,on_pause=None,on_level=None):
+    if os.environ.get('BELLO_LIVE_ENGINE','whisper')!='vosk':
+        return capture_batch(room,cancel,on_words,on_processing,on_pause=on_pause,on_level=on_level)
+    from streaming_stt import StreamDecoder
+    decoder=StreamDecoder()  # Model is preloaded when the UI opens.
+    frames=queue.Queue(maxsize=100)
+    done=threading.Event();ready=threading.Event();errors=[];request_id=[None]
+    def setup():
+        try:request_id[0]=api('/api/requests',json.dumps({'room':room}).encode())['request_id']
+        except Exception as error:errors.append(error)
+        finally:ready.set()
+    threading.Thread(target=setup,daemon=True).start()
+    def decode():
+        try:
+            while not done.is_set() or not frames.empty():
+                if cancel.is_set():return
+                try:pcm=frames.get(timeout=.1)
+                except queue.Empty:continue
+                text=decoder.feed(pcm)
+                if text and not cancel.is_set():on_words(text)
+            text=decoder.finish()
+            if text and not cancel.is_set():on_words(text)
+        except Exception as error:errors.append(error)
+    thread=threading.Thread(target=decode,daemon=True);thread.start()
+    def push(pcm):
+        try:frames.put_nowait(pcm)
+        except queue.Full:raise RuntimeError('Live recognition cannot keep up. Please try again.')
+    try:audio=record(cancel,on_pcm=push,on_pause=on_pause,on_level=on_level) if on_pause or on_level else record(cancel,on_pcm=push)
+    finally:done.set();thread.join(timeout=10)
+    if cancel.is_set():raise Cancelled()
+    if thread.is_alive():raise RuntimeError('Live recognition did not finish. Please try again.')
+    if audio is None:return None
+    on_processing()
+    while not ready.wait(.1):
+        if cancel.is_set():raise Cancelled()
+    if errors:raise errors[0]
+    return submit_audio(audio,room,cancel,request_id=request_id[0])

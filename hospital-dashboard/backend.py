@@ -64,8 +64,9 @@ def process_next():
             c.execute("UPDATE requests SET transcript=?,language=?,state='Ready to send',error=NULL WHERE id=?",(result['text'],result['language'],row['id']))
             event(c,row['id'],'Transcript saved from local faster-whisper')
     except Exception as error:
+        failure='No speech detected. No transcript was saved.' if str(error)=='No speech detected. No transcript was saved.' else 'Local transcription failed. Recording retained; retry explicitly.'
         with db() as c:
-            c.execute("UPDATE requests SET state='Retry required',error=? WHERE id=?",('Local transcription failed. Recording retained; retry explicitly.',row['id']))
+            c.execute("UPDATE requests SET state='Retry required',error=? WHERE id=?",(failure,row['id']))
             event(c,row['id'],'Local transcription failed; no delivery created')
         print(f"Local transcription failed for request {row['id']}: {type(error).__name__}",flush=True)
     return True
@@ -131,12 +132,13 @@ class Handler(BaseHTTPRequestHandler):
             except ValueError:return self.send(400,{'error':'JSON object required'})
             room=payload.get('room') if isinstance(payload,dict) else None
             if not isinstance(room,str) or not room.strip() or len(room)>50:return self.send(400,{'error':'Room is required (maximum 50 characters)'})
-            text=payload.get('text')
+            empty=payload.get('confirmed_empty') is True
+            text='[Assistance requested without a message — patient confirmed submission]' if empty else payload.get('text')
             if text is not None and (not isinstance(text,str) or not text.strip() or len(text)>4000):return self.send(400,{'error':'Text must contain 1–4000 characters'})
             with db() as c:
                 cursor=c.execute('INSERT INTO requests(room,recommended,sample_text,transcript,state) VALUES(?,?,?,?,?)',(room.strip(),TEAMS[0],'Awaiting voice transcript',text.strip() if text is not None else None,'Ready to send' if text is not None else 'Awaiting recording'))
                 rid=cursor.lastrowid;event(c,rid,'Patient request created; pending clerk review')
-                if text is not None:event(c,rid,'Typed message received and saved')
+                if text is not None:event(c,rid,'Patient explicitly submitted an empty assistance request; no transcript' if empty else 'Typed message received and saved')
             return self.send(201,{'request_id':rid,'room':room.strip(),'state':'Ready to send' if text is not None else 'Awaiting recording','transcript':text.strip() if text is not None else None})
         preview=re.fullmatch(r'/api/requests/(\d+)/preview',path)
         if preview:

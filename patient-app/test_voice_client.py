@@ -16,7 +16,7 @@ class Tests(unittest.TestCase):
  def test_live_capture_reuses_request_and_announces_processing(self):
   cancel=threading.Event();events=[]
   with patch.object(client,'api',side_effect=lambda path,*args: {'request_id':22} if path=='/api/requests' else {'text':''}),patch.object(client,'record',return_value=b'WAV'),patch.object(client,'submit_audio',return_value={'transcript':'Help'}) as final:
-   result=client.capture_and_submit('412 B',cancel,lambda text:events.append(text),lambda:events.append('processing'))
+   result=client.capture_batch('412 B',cancel,lambda text:events.append(text),lambda:events.append('processing'))
   self.assertEqual(result['transcript'],'Help')
   self.assertEqual(final.call_args.kwargs['request_id'],22)
   self.assertEqual(events,['processing'])
