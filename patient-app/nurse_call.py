@@ -206,6 +206,7 @@ class App:
         self.feedback_done = set()
         self.feedback_busy = False
         self.feedback_notice = ""
+        self.feedback_failed = False
         self.rating = tk.IntVar(value=0)
         self.resolution = tk.StringVar(value="")
         self.comment = tk.StringVar()
@@ -868,6 +869,7 @@ class App:
         self.resolution.set("")
         self.comment.set("")
         self.feedback_notice = ""
+        self.feedback_failed = False
         self.screen = "feedback"
         self.render()
 
@@ -917,7 +919,10 @@ class App:
         self.label(f, tr("comment_optional"), 22).pack(pady=(self.px(14), 0))
         tk.Entry(f, textvariable=self.comment, width=32, font=self.font(22),
                  state='disabled' if self.feedback_busy else 'normal').pack()
-        self.label(f, self.feedback_notice, 17, color="muted", wrap=700).pack(pady=self.px(10))
+        # A failed save is the one thing on this screen the patient must notice: it is why they are still here.
+        failed = self.feedback_failed and self.feedback_notice
+        self.label(f, self.feedback_notice, 20 if failed else 17, bold=bool(failed),
+                   color="stop" if failed else "muted", wrap=700).pack(pady=self.px(10))
         if not self.feedback_busy:
             actions=tk.Frame(f,bg=self.t['bg']);actions.pack(pady=self.px(8))
             if self.request_id not in self.feedback_done:
@@ -962,10 +967,12 @@ class App:
         rating, answer, comment = self.rating.get(), self.resolution.get(), self.comment.get().strip()
         if rating not in range(1, 6) or answer not in ('yes', 'no') or len(comment) > 2000:
             self.feedback_notice = tr("feedback_invalid")
+            self.feedback_failed = True
             self.render()
             return
         rid = self.request_id
         self.feedback_busy = True
+        self.feedback_failed = False
         self.feedback_notice = tr("saving_feedback")
         self.render()
         def work():
@@ -981,6 +988,9 @@ class App:
         if error is None:
             self.feedback_done.add(rid)
         self.feedback_notice = error or tr("feedback_saved")
+        self.feedback_failed = error is not None
+        if error is not None:
+            print("Could not save feedback:", error, file=sys.stderr, flush=True)
         if self.screen != "feedback" or self.request_id != rid:
             return
         if error is None:

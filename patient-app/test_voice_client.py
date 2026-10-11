@@ -41,6 +41,11 @@ class Tests(unittest.TestCase):
   sd.check_input_settings.side_effect=[PortAudioError('16 kHz unsupported'),None]
   sd.query_devices.return_value={'default_samplerate':44100.0}
   self.assertEqual(client.microphone_settings(sd),(None,44100))
+ def test_a_repeated_feedback_is_not_an_error(self):
+  with patch.object(client,'api',side_effect=RuntimeError('Feedback already submitted for this request')):
+   self.assertTrue(client.submit_feedback(7,4,'yes')['duplicate'])
+  with patch.object(client,'api',side_effect=RuntimeError('Unknown request')):
+   with self.assertRaisesRegex(RuntimeError,'Unknown request'):client.submit_feedback(7,4,'yes')
  def test_async_upload_polls_completed_transcript(self):
   results=[{'request_id':18},{'request_id':18,'state':'Queued'},
            {'request_id':18,'state':'Transcribing','transcript':None},
