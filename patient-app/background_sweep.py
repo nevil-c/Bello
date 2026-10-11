@@ -18,10 +18,22 @@ class BackgroundSweep:
                     widget.tag_lower(rect)
                     self.surfaces.append((widget,'canvas',rect,None))
                 elif isinstance(widget,tk.Label):
-                    # [bitmap, extent already painted, size the bitmap was cut for]
+                    # [bitmap, extent already painted, size the bitmap was cut for(, options to restore)]
                     self.surfaces.append((widget,'label',[None,0,None],None))
             for child in children:collect(child)
         collect(root)
+
+    def clear(self):
+        """Remove every overlay, rectangle and label bitmap. Dropping the object is not enough:
+        the paint stays on screen, and screens that are refreshed in place keep showing it."""
+        for widget,kind,item,size in self.surfaces:
+            if not widget.winfo_exists():continue
+            if kind=='frame':item.destroy()
+            elif kind=='canvas':widget.delete(item)
+            elif item[0] is not None:
+                widget.configure(image='',**item[3])
+                widget._sweep_image=None
+        self.surfaces=[]
 
     def update(self,progress):
         boundary=self.root.winfo_rootx()+self.root.winfo_width()*progress
@@ -37,6 +49,7 @@ class BackgroundSweep:
                 # bd=0: a label's border is added to the image when sizing it, so the label would
                 # grow 2px per side, the bitmap would be re-cut bigger, and it would never settle.
                 if item[0] is None or item[2]!=(width,height):
+                    if len(item)==3:item.append({o:widget.cget(o) for o in ('compound','padx','pady','bd')})
                     item[0]=tk.PhotoImage(width=max(1,width),height=max(1,height))
                     item[2]=(width,height);item[1]=0
                     widget.configure(image=item[0],compound='center',padx=0,pady=0,bd=0)

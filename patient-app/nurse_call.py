@@ -35,6 +35,7 @@ DEMO_SPEECH = "My back is hurting and I need help sitting up."
 # the point of being unreadable (it clips instead).
 MIN_CANVAS = 200
 MIN_LAYOUT_SCALE = 0.20
+FIT_SLACK = 0.97       # margin for borders that stay a fixed number of pixels at any scale
 SLOW_REBUILD_MS = 50   # report a screen build slower than this; the Pi vs the Mac numbers
 
 THEMES = {
@@ -171,11 +172,13 @@ class App:
         self.root = root
         self.voice = Voice(demo)
         self.dpi = root.winfo_fpixels("1i") / 96.0
-        self.layout_scale = 1.0
+        self.layout_scale = 1.0  # the content's scale; px() uses it
+        self.chrome_scale = 1.0  # the header's scale: always the call flow's, so it never zooms
         self.built_key = None    # (screen, chrome) currently built
         self.chrome_key = None   # theme/large/a11y the current chrome was built for
         self.built_gen = 0       # gen the current content belongs to
-        self.fit_for = None      # window size the current layout_scale was fitted to
+        self.fitted = {}         # fit_key() -> the layout_scale that fits it
+        self.painted = None      # theme colours the kept widgets currently wear
 
         self.screen = "home"     # home | listen | type
         self.state = "speaking"  # speaking | listening | sent | nothing   (listen screen)
@@ -293,31 +296,49 @@ class App:
         # is the flash on every press. So: reuse the chrome, rebuild only the content, and for a
         # state change on the same screen reconfigure the widgets we already have.
         chrome_key = (self.large, self.a11y_open, self.lang_open, self.filter_i, i18n.language)
-        # The home screen grows a staff button while a request is open; it needs its own fit.
+        # The home screen grows a staff button while a request is open; it needs a rebuild.
         content_key = (self.screen, chrome_key, self.screen == "home" and (self.open_here, bool(self.staff_notice)))
+        rescale = False
+        if self.chrome_key is not None:
+            # Build at the fitted scale straight away rather than build, fit and build again.
+            # Only the call flow's scale touches the header: into and out of the survey rescales
+            # the content alone, so the whole window is not torn down (it repainted as blank).
+            key = self.fit_key()
+            flow = self.scale_for(key[:3] + (False,))
+            content = self.scale_for(key) if key[3] else flow
+            if flow is not None and abs(flow - self.chrome_scale) > .005:
+                self.chrome_scale, force = flow, True
+            if content is not None and abs(content - self.layout_scale) > .005:
+                self.layout_scale, rescale = content, True
         rechrome = force or self.chrome_key != chrome_key
-        recontent = rechrome or self.built_key != content_key
+        recontent = rechrome or rescale or self.built_key != content_key
         self.gen += 1
         self.pause_started = None
         self.pause_display = 0.0
         self.cancel_progress = None
+        if self.background_sweep is not None:
+            # The sweep paints into widgets that a refresh keeps, so it has to be taken off them.
+            self.background_sweep.clear()
         self.background_sweep = None
         self.mic_visual = None
+        t = self.t
         if not recontent:
             # Same screen, new state. The content is current for this generation, so the layout
             # and fit handlers must keep working (they are keyed on it).
             self.built_gen = self.gen
+            self.repaint(t)
             self.refresh()
             return
         self.built_key = content_key
         self.chrome_key = chrome_key
         started = time.perf_counter()
-        t = self.t
         if rechrome:
+            self.painted = t
             # No layout_scale reset: the fit owns it, and resetting here would discard the scale
             # the fit just measured (it rebuilds through this path) and pop the page every time.
             for w in self.root.winfo_children():
                 w.destroy()
+            content_scale, self.layout_scale = self.layout_scale, self.chrome_scale
             self.root.configure(bg=t["bg"])
             top = tk.Frame(self.root, bg=t["bg"])
             top.pack(fill="x", padx=self.px(24), pady=(self.px(16), 0))
@@ -333,10 +354,12 @@ class App:
             self.inner.bind("<Configure>", self.layout)
             for event in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
                 self.root.unbind(event)
+            self.layout_scale = content_scale
         else:
             for w in self.inner.winfo_children():
                 w.destroy()
             self.words_label = None
+            self.repaint(t)
         self.built_gen = self.gen
         getattr(self, "draw_" + self.screen)(self.inner)
         slow = (time.perf_counter() - started) * 1000
@@ -349,6 +372,25 @@ class App:
         if self.screen == "listen" and self.state == "listening":
             self.root.after(33, self.animate_pause_background, self.flow, self.gen)
 
+    def repaint(self, t):
+        """Recolour the widgets we kept for theme t. Processing and sent tint the whole page, and a
+        refresh only retitles its own widgets, so without this the chrome kept the old colour."""
+        old, self.painted = self.painted, t
+        swap = {old[k]: t[k] for k in t if old[k] != t[k]}
+        if not swap:
+            return
+        def walk(w):
+            for option in ("bg", "activebackground"):
+                try:
+                    colour = w.cget(option)
+                except tk.TclError:
+                    continue
+                if colour in swap:
+                    w.configure({option: swap[colour]})
+            for child in w.winfo_children():
+                walk(child)
+        walk(self.root)
+
     def refresh(self):
         """Reconfigure the current screen in place; screens without a refresh redraw instead."""
         fn = getattr(self, "refresh_" + self.screen, None)
@@ -357,26 +399,84 @@ class App:
             return
         fn()
 
+    def fit_key(self):
+        """What the fitted scale depends on. Never the state or the content, so a fit cannot
+        trigger itself; the feedback survey is much taller than the call flow and fits apart."""
+        return ((self.root.winfo_width(), self.root.winfo_height()), self.large, i18n.language,
+                self.screen == "feedback")
+
     def fit(self):
-        # Scale to the space the window actually has, and only to that: content that merely
-        # grew (a longer partial transcript) must never rescale and rebuild the whole screen.
-        # Keyed on the WINDOW size, not the canvas: shrinking the layout also shrinks the
-        # px()-scaled header, which changes the canvas under us and re-triggers this forever.
-        # Fitted once per (window size, screen): a fit must never trigger itself, or px()
-        # truncation makes each pass a little smaller and the page creeps down a full rebuild
-        # at a time.
+        # One scale for the whole call flow (home, listen, type), chosen so the largest of its
+        # screens fits the window. Fitting each screen on its own changed the scale on every CALL
+        # and Cancel, and each change is a full rebuild: the page zoomed, and the torn-down
+        # windows showed as blank blocks.
         if self.built_gen != self.gen or not self.canvas.winfo_exists(): return
-        window = (self.root.winfo_width(), self.root.winfo_height())
-        if min(window) <= MIN_CANVAS or (window, self.built_key) == self.fit_for: return
-        available = (self.canvas.winfo_width(), self.canvas.winfo_height())
-        if min(available) <= MIN_CANVAS: return
-        required_w = max(1, self.inner.winfo_reqwidth()) / self.layout_scale
-        required_h = max(1, self.inner.winfo_reqheight()) / self.layout_scale
-        target = max(MIN_LAYOUT_SCALE, min(1.0, (available[0] - 8) / required_w, (available[1] - 8) / required_h))
-        self.fit_for = (window, self.built_key)
-        if abs(target - self.layout_scale) > .005:
-            self.layout_scale = target
-            self.render(force=True)
+        key = self.fit_key()
+        flow = self.scale_for(key[:3] + (False,))
+        content = self.scale_for(key) if key[3] else flow
+        if any(new is not None and abs(new - old) > .005
+               for new, old in ((flow, self.chrome_scale), (content, self.layout_scale))):
+            self.render()
+
+    def scale_for(self, key):
+        """The content scale that fits key, measured once; None while the window is not laid out."""
+        window, survey = key[0], key[3]
+        if key in self.fitted or min(window) <= MIN_CANVAS or not self.canvas.winfo_exists():
+            return self.fitted.get(key)
+        self.fitted[key] = self.layout_scale   # claimed first: the idle pass below can run a queued fit
+        # Nested pack sizes settle over several idle passes; measuring after only the first one
+        # read a page smaller than it is and fitted a scale that clipped the bottom of it.
+        self.root.update_idletasks()
+        available = (self.canvas.winfo_width(), self.canvas.winfo_height()) if self.canvas.winfo_exists() else (0, 0)
+        flow = self.scale_for(key[:3] + (False,)) if survey else None
+        if min(available) <= MIN_CANVAS or (survey and flow is None):
+            del self.fitted[key]
+            return None
+        need = self.largest_screen(("feedback",) if survey else ("home", "listen", "type"))
+        # The header and margins, unscaled. They scale with the call flow, so for the call flow
+        # solve for them too; for the survey they are fixed at the call flow's scale. FIT_SLACK
+        # covers the fixed-pixel borders that do not shrink with the layout.
+        chrome = [(window[i] - available[i]) / self.chrome_scale for i in (0, 1)]
+        if survey:
+            target = min(1.0, *((window[i] - 8 - chrome[i] * flow) / need[i] for i in (0, 1)))
+        else:
+            target = min(1.0, *((window[i] - 8) / (need[i] + chrome[i]) for i in (0, 1)))
+        self.fitted[key] = max(MIN_LAYOUT_SCALE, min(1.0, FIT_SLACK * target))
+        return self.fitted[key]
+
+    def largest_screen(self, screens):
+        """Unscaled (width, height) of the largest of these screens in any state, built off screen."""
+        saved, focus = dict(self.__dict__), self.root.focus_get()
+        probe = tk.Frame(self.root)    # never mapped: sizes are computed, nothing is drawn
+        need = [1, 1]
+        def measure():
+            self.root.update_idletasks()
+            need[0] = max(need[0], probe.winfo_reqwidth())
+            need[1] = max(need[1], probe.winfo_reqheight())
+        try:
+            # Every optional row showing: rate, open request, notices.
+            self.request_id, self.feedback_done, self.open_here = "fit", set(), True
+            self.staff_notice, self.feedback_notice = tr("staff_failed"), tr("feedback_invalid")
+            self.feedback_busy, self.words, self.keyboard = False, DEMO_SPEECH, False
+            for screen in screens:
+                self.screen, self.state = screen, "listening"
+                for w in probe.winfo_children():
+                    w.destroy()
+                getattr(self, "draw_" + screen)(probe)
+                if screen == "listen":
+                    for state in ("speaking", "listening", "processing", "error", "sent", "empty"):
+                        self.state = state
+                        self.refresh_listen()
+                        measure()
+                else:
+                    measure()
+        finally:
+            probe.destroy()
+            self.__dict__.clear()
+            self.__dict__.update(saved)
+            if focus and focus.winfo_exists():
+                focus.focus_set()
+        return need[0] / self.layout_scale, need[1] / self.layout_scale
 
     def layout(self, event=None):
         if self.built_gen != self.gen or not self.canvas.winfo_exists(): return
@@ -433,10 +533,10 @@ class App:
         self.mic_canvas, self.mic_disc = self.draw_mic(f, active=False)
         self.listen_hint = self.label(f, "", 22)
         # Reserved box: a growing transcript used to reflow the page and push Cancel off screen.
-        # Height is a calibration knob -- four lines of the 28pt words font.
+        # Height is a calibration knob -- three lines of the 28pt words font, at either text size.
         self.listen_box = tk.Frame(f, bg=t["soft"], padx=self.px(28), pady=self.px(20),
                                    highlightbackground=t["line"], highlightthickness=2,
-                                   width=self.px(706), height=self.px(200))
+                                   width=self.px(706), height=self.px(200 * (1.85 / 1.6 if self.large else 1)))
         self.listen_box.pack_propagate(False)
         self.words_label = tk.Label(self.listen_box, text="", font=self.font(28), fg=t["muted"],
                                     bg=t["soft"], wraplength=self.px(650), width=0, justify="center")
@@ -1016,6 +1116,7 @@ class App:
             return
         i18n.apply(code, strings)
         i18n.save(code, strings)
+        self.fitted.clear()      # same language, different text: it may wrap to more lines
         self.render(force=True)
 
     # ---- accessibility
