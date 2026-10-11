@@ -92,4 +92,66 @@ class Tests(unittest.TestCase):
   self.assertLessEqual(stats['alloc'],len(labels),'bitmaps are cut once, not rebuilt every frame')
   self.assertLess(stats['pixels'],2*area,'per-frame repaint must be strips, not whole faces')
 
+ def paint(self):
+  """(widget backgrounds, sweep overlays still placed, labels still carrying a sweep bitmap)"""
+  backgrounds,overlays,bitmaps=set(),[],[]
+  def walk(w):
+   if w.winfo_manager()=='place' and isinstance(w,tk.Frame) and w.winfo_width()>1:overlays.append(w)
+   elif w.winfo_manager()!='place':backgrounds.add(w.cget('bg'))
+   if isinstance(w,tk.Label) and w.cget('image'):bitmaps.append(w)
+   for c in w.winfo_children():walk(c)
+  walk(self.root)
+  return backgrounds,overlays,bitmaps
+
+ def test_pause_sweep_and_page_tint_do_not_outlive_the_listening_state(self):
+  # The sweep only runs with a real microphone (run_local.py), and processing/sent are refreshed
+  # in place, so the half-swept page used to stay frozen behind "Your message has been sent".
+  self.listen()
+  white=self.app.t['bg']
+  self.app.on_pause_progress(self.app.flow,.01);self.pump(40,.035)
+  _,overlays,bitmaps=self.paint()
+  self.assertTrue(overlays and bitmaps,'precondition: the pause sweep should be on screen')
+  canvas=self.app.canvas
+  for step,state in ((lambda f:self.app.on_processing(f),'processing'),
+                     (lambda f:self.app.on_done(f,'My back hurts','r1'),'sent')):
+   step(self.app.flow);self.pump(10)
+   backgrounds,overlays,bitmaps=self.paint()
+   self.assertEqual(self.app.state,state)
+   self.assertEqual((overlays,bitmaps),([],[]),f'{state}: sweep paint left behind')
+   self.assertNotIn(white,backgrounds,f'{state}: part of the page kept the listening background')
+   self.assertIn(self.app.t['bg'],backgrounds)
+  self.assertIs(self.app.canvas,canvas,'recoloured in place, not by rebuilding the screen')
+  self.app.cancel();self.pump(10)
+  backgrounds,_,_=self.paint()
+  self.assertFalse(backgrounds&{'#D8F3DC','#B7E4C7'},'home must not keep the sent tint')
+
+ def test_call_flow_keeps_one_scale_and_every_state_fits(self):
+  # The Pi's 1024x600 screen. Each screen used to be fitted alone, and measured before its
+  # nested frames had settled: CALL and Cancel zoomed the page by a full rebuild (the blank
+  # blocks), and listen, sent and home-with-open-request all ran off the bottom.
+  self.root.geometry('1024x600+3000+100');self.pump(40,.01)
+  if (self.root.winfo_width(),self.root.winfo_height())!=(1024,600):self.skipTest('window manager would not size the window')
+  scale,canvas=self.app.layout_scale,self.app.canvas
+  seen=[]
+  def check(tag):
+   self.pump(10,.01);self.root.update_idletasks()
+   seen.append(tag)
+   self.assertEqual(self.app.layout_scale,scale,f'{tag}: the page was rescaled')
+   self.assertIs(self.app.canvas,canvas,f'{tag}: the whole window was rebuilt')
+   self.assertLessEqual(self.app.inner.winfo_reqheight(),self.app.canvas.winfo_height(),f'{tag}: runs off the bottom')
+   self.assertLessEqual(self.app.inner.winfo_reqwidth(),self.app.canvas.winfo_width(),f'{tag}: runs off the side')
+  for round in (1,2):
+   self.app.start_call();check(f'{round} listening')
+   self.app.on_words(self.app.flow,'My back is hurting and I need help sitting up');check(f'{round} words')
+   self.app.on_processing(self.app.flow);check(f'{round} processing')
+   self.app.on_done(self.app.flow,'My back is hurting','r1');check(f'{round} sent')
+   self.app.cancel();check(f'{round} home with an open request')
+   self.app.start_call();self.app.cancel();check(f'{round} home after cancel')
+  self.assertEqual(len(seen),12)
+  # The survey is taller and may use its own content scale, but must fit and keep the header.
+  self.app.open_feedback();self.pump(10,.01);self.root.update_idletasks()
+  self.assertIs(self.app.canvas,canvas,'opening the survey rebuilt the whole window')
+  self.assertLessEqual(self.app.inner.winfo_reqheight(),self.app.canvas.winfo_height(),'survey runs off the bottom')
+  self.app.cancel();check('home after the survey')
+
 if __name__=='__main__':unittest.main(verbosity=2)
