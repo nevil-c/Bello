@@ -1,13 +1,7 @@
-# Bello patient bell
+# Patient call UI
 
-The patient side of the call bell: one CALL button, a spoken prompt, and the patient's words shown on screen.
+Run with the local backend using the instructions in ../hospital-dashboard/TRANSCRIPT_SETUP.md. The launcher no longer asks for a speech-provider key. CALL records microphone audio, then displays Processing your recording until the backend returns the completed original-language transcript. No live partial text is generated. Accessibility supports keyboard entry, colour themes and larger text. Typed requests save directly without STT.
 
-Run `python nurse_call.py` (Windows, Python 3 standard library only). Use `python nurse_call.py --demo` to pretend the patient spoke, without a microphone.
+Rate my service collects a 1–5 rating, Yes/Partly/No resolution answer and an optional comment, linked to the saved request. The backend prevents duplicate feedback. The survey is patient initiated after help; there is no department completion signal. The home screen retains feedback for the most recent saved request in this app session only. Demo mode is offline and sends no requests.
 
-Flow: CALL → "I'm listening. Tell me what you need." → patient speaks, words appear live → "Thank you. Your nurse has your message." The only button is ✕ Cancel. If nothing is heard it asks once more.
-
-Accessibility (top-right corner): Keyboard (on-screen keyboard instead of speaking), Colour filter (Standard / High contrast / Night), Larger text.
-
-Keys: F11 full screen, Esc closes the menu or leaves full screen, Space/Enter presses CALL.
-
-Voice and speech recognition use Windows' built-in System.Speech, so nothing needs installing; accuracy is limited. The message is not yet sent anywhere: connecting it to the hospital dashboard backend is the next step. No real patient data is included.
+Cancel stops capture or polling; an already uploaded recording can continue processing and remain visible in the clerk dashboard. No automatic retry is made. Closing the launcher stops its backend; interrupted jobs can be explicitly retried from retained recordings. The administrative sample dashboard remains separate; backend analytics require explicit --database selection in that server.

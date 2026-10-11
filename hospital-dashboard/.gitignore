@@ -1,3 +1,6 @@
 __pycache__/
 transcript-data/
 .env
+
+models/
+__pycache__/

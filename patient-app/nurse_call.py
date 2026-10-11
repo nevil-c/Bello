@@ -7,11 +7,14 @@ Demo:  python nurse_call.py --demo    (pretends the patient spoke; no microphone
 Keys:  F11 full screen  |  Esc closes the menu / leaves full screen
        Space or Enter on the start screen presses CALL
 
-Flow:  CALL  ->  "I'm listening. Tell me what you need."  ->  patient speaks,
+Flow:  CALL  ->  recording ding  ->  patient speaks,
        words appear on screen  ->  sent to the nurse.  One Cancel button.
 
-Voice and speech recognition use what is built into Windows, so nothing needs installing.
+Microphone audio is uploaded to the Bello backend for local speech recognition transcription.
+Install requirements.txt and configure BELLO_SERVER and BELLO_API_TOKEN.
 """
+import os
+from voice_client import capture_and_submit, record, submit_audio, submit_text, submit_feedback, Cancelled
 import queue
 import subprocess
 import sys
@@ -20,8 +23,7 @@ import time
 import tkinter as tk
 import tkinter.font as tkfont
 
-ROOM, BED = "412", "B"
-PROMPT = "I'm listening. Tell me what you need."
+ROOM, BED = os.environ.get("BELLO_ROOM", "412"), os.environ.get("BELLO_BED", "B")
 DEMO_SPEECH = "My back is hurting and I need help sitting up."
 
 THEMES = {
@@ -84,6 +86,7 @@ class Voice:
         self.q = queue.Queue()
         self._proc = None
         self._lock = threading.Lock()
+        self._cancel = threading.Event()
 
     def _start(self, script):
         try:
@@ -97,6 +100,7 @@ class Voice:
         return p
 
     def stop(self):
+        self._cancel.set()
         with self._lock:
             p, self._proc = self._proc, None
         if p and p.poll() is None:
@@ -108,6 +112,14 @@ class Voice:
                 p = self._start(SAY_PS.replace("{text}", text.replace("'", "''")))
                 if p:
                     p.wait()
+            elif sys.platform == "darwin":
+                try:
+                    p = subprocess.Popen(["/usr/bin/say", text], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    with self._lock:
+                        self._proc = p
+                    p.wait()
+                except OSError:
+                    pass
             else:
                 try:
                     import pyttsx3
@@ -120,28 +132,32 @@ class Voice:
         self.stop()
         threading.Thread(target=work, daemon=True).start()
 
-    def listen(self, on_words, on_done):
-        """on_words(text) is called as words arrive; on_done(text or None) at the end."""
-        def work():
-            final = None
-            if self.demo:
-                words = DEMO_SPEECH.split()
-                for i in range(1, len(words) + 1):
-                    time.sleep(0.35)
-                    self.q.put((on_words, (" ".join(words[:i]),)))
-                final = DEMO_SPEECH
-            elif self.windows:
-                p = self._start(LISTEN_PS)
-                if p:
-                    for raw in p.stdout:
-                        line = raw.decode("utf-8", "replace").strip()
-                        if line.startswith("H:"):
-                            self.q.put((on_words, (line[2:],)))
-                        elif line.startswith("R:"):
-                            final = line[2:]
-                    p.wait()
-            self.q.put((on_done, (final or None,)))
+    def listen(self, on_words, on_done, on_error, on_processing):
         self.stop()
+        cancel = threading.Event()
+        self._cancel = cancel
+        def work():
+            try:
+                request_id = None
+                if self.demo:
+                    final = DEMO_SPEECH
+                else:
+                    result = capture_and_submit(f"{ROOM} · {BED}", cancel,
+                        lambda text: self.q.put((on_words, (text,))),
+                        lambda: self.q.put((on_processing, ())))
+                    if result is None:
+                        self.q.put((on_done, (None,)))
+                        return
+                    final = result['transcript']
+                    request_id = result['request_id']
+                if not cancel.is_set():
+                    self.q.put((on_words, (final,)))
+                    self.q.put((on_done, (final, request_id)))
+            except Cancelled:
+                pass
+            except Exception as error:
+                if not cancel.is_set():
+                    self.q.put((on_error, (str(error),)))
         threading.Thread(target=work, daemon=True).start()
 
 
@@ -172,11 +188,19 @@ class App:
         self.gen = 0             # bumps on every redraw (stops old animations)
         self.typed = tk.StringVar()
         self.words_label = None
+        self.request_id = None
+        self.feedback_done = set()
+        self.feedback_busy = False
+        self.feedback_notice = ""
+        self.rating = tk.IntVar(value=0)
+        self.resolution = tk.StringVar(value="")
+        self.comment = tk.StringVar()
 
         families = set(tkfont.families())
         self.family = next((f for f in ("Atkinson Hyperlegible", "Segoe UI", "Helvetica")
                             if f in families), "TkDefaultFont")
 
+        root.protocol("WM_DELETE_WINDOW", lambda: (self.voice.stop(), root.destroy()))
         root.title("Nurse Call")
         root.geometry(f"{self.px(1000)}x{self.px(740)}")
         root.minsize(self.px(820), self.px(640))
@@ -197,7 +221,7 @@ class App:
         return int(n * self.dpi)
 
     def font(self, size, bold=False):
-        scale = 1.3 if self.large else 1.0
+        scale = 1.85 if self.large else 1.6
         return (self.family, -self.px(size * scale), "bold" if bold else "normal")
 
     def poll(self):
@@ -246,8 +270,28 @@ class App:
 
         body = tk.Frame(self.root, bg=t["bg"])
         body.pack(fill="both", expand=True, padx=self.px(32), pady=self.px(12))
-        inner = tk.Frame(body, bg=t["bg"])
-        inner.place(relx=.5, rely=.5, anchor="center")
+        canvas=tk.Canvas(body,bg=t['bg'],highlightthickness=0)
+        scroll=tk.Scrollbar(body,orient='vertical',command=canvas.yview)
+        canvas.configure(yscrollcommand=scroll.set)
+        canvas.pack(side='left',fill='both',expand=True)
+        inner=tk.Frame(canvas,bg=t['bg'])
+        window=canvas.create_window(0,0,window=inner,anchor='n')
+        def layout(event=None):
+            if not canvas.winfo_exists():return
+            w,h=canvas.winfo_width(),canvas.winfo_height()
+            needed=inner.winfo_reqheight()
+            canvas.coords(window,w/2,max(0,(h-needed)/2))
+            canvas.configure(scrollregion=(0,0,w,max(h,needed)))
+            if needed>h:scroll.pack(side='right',fill='y')
+            else:scroll.pack_forget()
+        canvas.bind('<Configure>',layout)
+        inner.bind('<Configure>',layout)
+        def wheel(event):
+            if canvas.winfo_exists() and inner.winfo_reqheight()>canvas.winfo_height():
+                canvas.yview_scroll(-1 if event.delta>0 or event.num==4 else 1,'units')
+        self.root.bind('<MouseWheel>',wheel)
+        self.root.bind('<Button-4>',wheel)
+        self.root.bind('<Button-5>',wheel)
         getattr(self, "draw_" + self.screen)(inner)
 
         if self.a11y_open:
@@ -272,15 +316,17 @@ class App:
 
     def draw_home(self, f):
         t = self.t
-        d = self.px(330 * (1.15 if self.large else 1))
+        d = self.px(390 * (1.15 if self.large else 1))
         c = tk.Canvas(f, width=d, height=d, bg=t["bg"], highlightthickness=0, cursor="hand2")
         c.create_oval(0, 0, d, d, fill=t["halo"], outline="")
         m = self.px(22)
         c.create_oval(m, m, d - m, d - m, fill=t["call"], outline="")
-        c.create_text(d / 2, d / 2, text="CALL", fill=t["on"], font=self.font(60, True))
+        c.create_text(d / 2, d / 2, text="CALL", fill=t["on"], font=self.font(78, True))
         c.bind("<Button-1>", lambda e: self.start_call())
         c.pack()
         self.label(f, "Press to call your nurse", 22, color="muted").pack(pady=(self.px(22), 0))
+        if self.request_id and self.request_id not in self.feedback_done:
+            self.button(f, "Rate my last service", self.open_feedback, size=19).pack(pady=self.px(12))
 
     def draw_listen(self, f):
         t = self.t
@@ -288,16 +334,20 @@ class App:
         title = {"speaking": "I'm listening.",
                  "listening": "I'm listening.",
                  "paused": "I'm listening.",
-                 "sent": "Your nurse has your message.",
-                 "nothing": "Your nurse has been called."}[st]
+                 "processing": "Sending your message…",
+                 "error": "Message was not confirmed.",
+                 "sent": "Your message has been received.",
+                 "nothing": "No message was sent."}[st]
         self.label(f, title, 34, True, wrap=860).pack()
 
-        if self.screen == "listen" and not self.keyboard:
+        if self.screen == "listen" and not self.keyboard and st in ("speaking", "listening", "paused"):
             self.draw_mic(f, active=(st == "listening"))
 
         hint = {"speaking": "Please wait…",
                 "listening": "Tell me what you need",
                 "paused": "Paused",
+                "processing": "Saving your message" if self.keyboard else "Processing your recording",
+                "error": "Please try again or use your bedside call bell.",
                 "sent": "",
                 "nothing": "I couldn't hear a message."}[st]
         if hint:
@@ -310,10 +360,13 @@ class App:
         text = self.words or "Your words will show here"
         self.words_label = tk.Label(box, text=text, font=self.font(28, bool(self.words)),
                                     fg=t["ink"] if self.words else t["muted"], bg=t["soft"],
-                                    wraplength=self.px(760), width=34, justify="center")
+                                    wraplength=self.px(650), width=0, justify="center")
         self.words_label.pack()
 
-        self.button(f, "✕   Cancel", self.cancel, size=24, danger=True).pack(pady=(self.px(30), 0))
+        if st == "sent" and self.request_id and self.request_id not in self.feedback_done:
+            self.label(f, "After you receive help, you can rate the service.", 17, color="muted").pack()
+            self.button(f, "Rate my service", self.open_feedback, size=20).pack(pady=self.px(8))
+        self.button(f, "Done" if st == "sent" else "✕   Cancel", self.cancel, size=24, danger=st != "sent").pack(pady=(self.px(16), 0))
 
     def draw_mic(self, f, active):
         t = self.t
@@ -445,7 +498,7 @@ class App:
             self.typed.set("")
             self.screen = "type"
             self.render()
-            self.voice.say("I've called your nurse. Type what you need.")
+            self.voice.say("Type what you need.")
         else:
             self.ask()
 
@@ -454,14 +507,29 @@ class App:
         f = self.flow
         self.screen, self.state = "listen", "speaking"
         self.render()
-        self.voice.say(PROMPT, then=lambda: self.begin_listen(f))
+        self.begin_listen(f)
 
     def begin_listen(self, f):
         if f != self.flow:
             return
         self.state = "listening"
         self.render()
-        self.voice.listen(lambda text: self.on_words(f, text), lambda text: self.on_done(f, text))
+        self.voice.listen(lambda text: self.on_words(f, text), lambda text, rid=None: self.on_done(f, text, rid),
+                          lambda error: self.on_error(f, error), lambda: self.on_processing(f))
+
+    def on_processing(self, f):
+        if f == self.flow:
+            self.state = "processing"
+            self.render()
+
+    def on_error(self, f, error):
+        if f == self.flow:
+            print("Patient request error:", error, file=sys.stderr)
+            self.words = ("The microphone is unavailable. Please check microphone access and try again."
+                          if any(word in error.lower() for word in ('microphone', 'portaudio', 'input device'))
+                          else "We could not save your message. Please try again or use your bedside call bell.")
+            self.state = "error"
+            self.render()
 
     def on_words(self, f, text):
         if f != self.flow or not text:
@@ -470,14 +538,15 @@ class App:
         if self.words_label and self.words_label.winfo_exists():
             self.words_label.configure(text=self.words, fg=self.t["ink"], font=self.font(28, True))
 
-    def on_done(self, f, text):
+    def on_done(self, f, text, request_id=None):
         if f != self.flow:
             return
         if text:
+            self.request_id = request_id
             self.words = text[0].upper() + text[1:]
             self.state = "sent"
             self.render()
-            self.voice.say("Thank you. Your nurse has your message.")
+            self.voice.say("Thank you. Your message is saved for the unit clerk.")
         elif self.tries == 0:
             self.tries += 1
             self.words = ""
@@ -489,16 +558,133 @@ class App:
         else:
             self.state = "nothing"
             self.render()
-            self.voice.say("Your nurse has been called.")
+            self.voice.say("No message was sent. Please use your bedside call bell.")
 
     def send_typed(self):
         msg = self.typed.get().strip()
-        if not msg:
+        if not msg or self.screen != "type":
             return
-        self.words = msg[0].upper() + msg[1:]
-        self.screen, self.state = "listen", "sent"
+        self.flow += 1
+        flow = self.flow
+        self.words = msg
+        self.screen, self.state = "listen", "processing"
         self.render()
-        self.voice.say("Thank you. Your nurse has your message.")
+        def work():
+            try:
+                if self.voice.demo:
+                    result = {'transcript': msg, 'request_id': None}
+                else:
+                    result = submit_text(msg, f"{ROOM} · {BED}")
+                self.voice.q.put((self.on_done, (flow, result['transcript'], result['request_id'])))
+            except Exception as error:
+                self.voice.q.put((self.on_error, (flow, str(error))))
+        threading.Thread(target=work, daemon=True).start()
+
+    def open_feedback(self):
+        if not self.request_id or self.request_id in self.feedback_done:
+            return
+        self.voice.stop()
+        self.rating.set(0)
+        self.resolution.set("")
+        self.comment.set("")
+        self.feedback_notice = ""
+        self.screen = "feedback"
+        self.render()
+
+    def draw_feedback(self, f):
+        self.label(f, "How was the help you received?", 30, True, wrap=800).pack()
+        row = tk.Frame(f, bg=self.t['bg']); row.pack()
+        self.rating_cards=[]
+        # Draw faces directly so Raspberry Pi does not need an emoji font.
+        for n, title in enumerate(('Very unhappy', 'Unhappy', 'Okay', 'Happy', 'Very happy'), 1):
+            card=tk.Frame(row,bg=self.t['bg'],highlightthickness=self.px(3),highlightbackground=self.t['bg']);card.grid(row=0,column=n-1,padx=self.px(7),sticky='n')
+            row.columnconfigure(n-1,weight=1,uniform='ratings')
+            d=self.px(94)
+            face=tk.Canvas(card,width=d,height=d,bg=self.t['bg'],highlightthickness=0)
+            colour=('#DF1D2E','#EF7523','#F2AD3E','#90BF40','#48AB4D')[n-1]
+            face.create_oval(5,5,d-5,d-5,fill=self.t['bg'],outline=colour,width=self.px(6),tags='face_disc')
+            for x in (.34,.66):
+                face.create_oval(d*x-3,d*.34-3,d*x+3,d*.34+3,fill=colour,outline='')
+            if n<3:
+                face.create_arc(d*.27,d*(.53 if n==1 else .60),d*.73,d*(.89 if n==1 else .79),start=0,extent=180,style='arc',outline=colour,width=self.px(5))
+            elif n==3:face.create_line(d*.3,d*.65,d*.7,d*.65,fill=colour,width=self.px(5),capstyle='round')
+            else:face.create_arc(d*.25,d*(.40 if n==5 else .49),d*.75,d*.76,start=180,extent=180,style='arc',outline=colour,width=self.px(5))
+            face.pack()
+            stars=self.label(card,'★'*n,17,True);stars.configure(fg=colour);stars.pack()
+            face.bind('<Button-1>',lambda e,value=n: self.select_rating(value))
+            face.configure(cursor='hand2')
+            tk.Radiobutton(card,text=str(n),variable=self.rating,value=n,command=lambda value=n:self.select_rating(value),
+                           font=self.font(26,True),bg=self.t['bg'],fg=self.t['ink'],
+                           selectcolor=self.t['soft'],state='disabled' if self.feedback_busy else 'normal').pack()
+            self.label(card,title,17,wrap=150).pack()
+            self.rating_cards.append((n,card,face,colour))
+            for target in [card]+[w for w in card.winfo_children() if not isinstance(w,tk.Radiobutton)]:
+                target.bind('<Button-1>',lambda e,value=n:self.select_rating(value))
+                target.configure(cursor='hand2')
+        self.refresh_rating_highlight()
+        self.label(f, "Was your request resolved?", 27, True).pack(pady=(self.px(20), 0))
+        row = tk.Frame(f, bg=self.t['bg']); row.pack()
+        for value, title in [('yes', 'Yes'), ('no', 'No')]:
+            tk.Radiobutton(row, text=title, variable=self.resolution, value=value,
+                           font=self.font(26,True), bg=self.t['bg'], fg=self.t['ink'],
+                           selectcolor=self.t['soft'], state='disabled' if self.feedback_busy else 'normal').pack(side='left', padx=self.px(10))
+        self.label(f, "Comment (optional)", 22).pack(pady=(self.px(14), 0))
+        tk.Entry(f, textvariable=self.comment, width=32, font=self.font(22),
+                 state='disabled' if self.feedback_busy else 'normal').pack()
+        self.label(f, self.feedback_notice, 17, color="muted", wrap=700).pack(pady=self.px(10))
+        if not self.feedback_busy:
+            actions=tk.Frame(f,bg=self.t['bg']);actions.pack(pady=self.px(8))
+            if self.request_id not in self.feedback_done:
+                self.button(actions, "Submit feedback", self.send_feedback, size=23).pack(side='left',padx=self.px(8))
+            self.button(actions, "Done" if self.request_id in self.feedback_done else "Skip for now", self.cancel, size=22).pack(side='left',padx=self.px(8))
+
+    def select_rating(self, value):
+        if self.feedback_busy:return
+        self.rating.set(value)
+        self.refresh_rating_highlight()
+
+    def refresh_rating_highlight(self):
+        for value,card,face,colour in self.rating_cards:
+            chosen=self.rating.get()==value
+            bg=blend(colour,self.t['bg'],.84) if chosen else self.t['bg']
+            card.configure(bg=bg,highlightbackground=colour if chosen else self.t['bg'])
+            for child in card.winfo_children():
+                child.configure(bg=bg)
+                if isinstance(child,tk.Radiobutton):child.configure(selectcolor=bg,activebackground=bg)
+            face.itemconfigure('face_disc',fill=colour if chosen else self.t['bg'])
+            for item in face.find_all():
+                if 'face_disc' in face.gettags(item):continue
+                ink='#FFFFFF' if chosen else colour
+                if face.type(item)=='arc':face.itemconfigure(item,outline=ink)
+                else:face.itemconfigure(item,fill=ink)
+
+    def send_feedback(self):
+        if self.feedback_busy or self.request_id in self.feedback_done:
+            return
+        rating, answer, comment = self.rating.get(), self.resolution.get(), self.comment.get().strip()
+        if rating not in range(1, 6) or answer not in ('yes', 'no') or len(comment) > 2000:
+            self.feedback_notice = "Choose a rating and whether your request was resolved. Comments must be under 2,001 characters."
+            self.render()
+            return
+        rid = self.request_id
+        self.feedback_busy = True
+        self.feedback_notice = "Saving feedback…"
+        self.render()
+        def work():
+            try:
+                submit_feedback(rid, rating, answer, comment)
+                self.voice.q.put((self.feedback_result, (rid, None)))
+            except Exception as error:
+                self.voice.q.put((self.feedback_result, (rid, str(error))))
+        threading.Thread(target=work, daemon=True).start()
+
+    def feedback_result(self, rid, error):
+        self.feedback_busy = False
+        if error is None:
+            self.feedback_done.add(rid)
+        self.feedback_notice = error or "Thank you. Your feedback has been saved."
+        if self.screen == "feedback" and self.request_id == rid:
+            self.render()
 
     def type_char(self, ch):
         v = self.typed.get()
@@ -513,7 +699,7 @@ class App:
         self.words = ""
         self.screen = "home"
         self.render()
-        self.voice.say("Your call is cancelled.")
+        self.voice.say("Recording closed.")
 
     # ---- accessibility
     def open_a11y(self):

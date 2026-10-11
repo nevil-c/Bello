@@ -1,54 +1,45 @@
-# Bello: recording → ElevenLabs → saved transcript → department inbox
+# Local recording → transcript → department inbox
 
-No Twilio, telephone calls, or Raspberry Pi is required for the first test.
-Python standard library only. Use fictional demonstration recordings.
+No ElevenLabs account, API key, or cloud transcription is used.
 
-## Run
+## Install on Raspberry Pi 4B (8 GB)
 
-1. Revoke the API key pasted in chat. Create a replacement ElevenLabs key with Speech to Text access. Do not put it in any source file.
-2. In Terminal, change to this hospital-dashboard folder. Set the replacement key privately:
+Use 64-bit Raspberry Pi OS (aarch64), Python 3.9+ supported by the installed package wheels, and a USB microphone. Install python3-venv, python3-tk and libportaudio2 using the OS package manager. Use active cooling for sustained CPU work.
 
-```sh
-read -s 'ELEVENLABS_API_KEY?New ElevenLabs API key: '
-export ELEVENLABS_API_KEY
-python3 backend.py
-```
-
-The read command above is for macOS zsh. backend.py reads the key from its environment, never from the browser. Its terminal prints a separate private BELLO API token for device/API uploads.
-
-3. Open http://127.0.0.1:8766/ . The old standalone dashboard on 8765 does not use the backend. The UI labels seeded examples; they are NOT transcribed patient speech.
-4. Make a WAV or MP3 recording of yourself saying a fictional blanket request. No upload control is added to the patient panel.
-5. In a second terminal, change to this folder, set BELLO_API_TOKEN to the token printed by backend.py, and run:
+From the repository root:
 
 ```sh
-python3 ingest_audio.py 8 /absolute/path/to/demo-request.wav
+python3 -m venv patient-app/.venv-local
+patient-app/.venv-local/bin/python -m pip install -r patient-app/requirements.txt -r hospital-dashboard/requirements.txt
+patient-app/.venv-local/bin/python hospital-dashboard/prepare_model.py
+patient-app/.venv-local/bin/python patient-app/run_local.py
 ```
 
-This sends that recording to ElevenLabs (and uses API quota). The returned text is stored in SQLite under transcript-data/ and replaces the sample text for room 203 B in the dashboard. The saved transcript is not automatically sent to any department.
+The explicit download requires internet once. Runtime loads only the local model directory and never downloads a model or uploads audio externally. Models are not committed to Git. Start with multilingual tiny; compare base only after measuring actual Pi latency and accuracy. Configure BELLO_MODEL_DIR for another downloaded directory, BELLO_STT_THREADS (default 3), BELLO_ROOM and BELLO_BED as needed. CPU INT8, beam size 1, one model instance and one transcription worker are used. No GPU is required. Mac performance does not predict Raspberry Pi performance.
 
-6. Click Send transcript for room 203 B. The recommended department is preselected. Review it, choose one receiving team, then Send stored transcript.
-7. Open Department inbox in the worklist toolbar (or http://127.0.0.1:8766/departments). Select the receiving department. The exact saved transcript appears with room and detected language. Any available team member can acknowledge it, with no individual assignment.
+The launcher starts a matching local backend and patient window and prints the clerk-dashboard URL. The private Bello upload token still protects API endpoints; no speech-provider key is needed. Direct backend launch: `patient-app/.venv-local/bin/python hospital-dashboard/backend.py --port 8766`.
 
-## Backend APIs
+## API behavior
 
-All /api endpoints require the X-Bello-Token header.
+POST /api/requests creates a room-linked request; optional text creates a typed request without STT. POST /api/requests/{id}/audio accepts raw WAV or MP3 (10 MB maximum) and returns HTTP 202 with state Queued. GET /api/requests/{id} returns Queued, Transcribing, Ready to send, Retry required or Delivered to queue, plus transcript/language/error. Requests and recordings persist in SQLite and transcript-data. A single worker processes jobs; at most four pending/running jobs are admitted. Queue overflow returns 429 without saving the upload. Duplicate queued/completed/delivered uploads return 409.
 
-- GET /api/requests: IDs, saved transcripts, languages, processing state.
-- POST /api/requests/{id}/audio: raw WAV/MP3 bytes; saves recording, transcribes through ElevenLabs scribe_v2, stores text. Maximum 10 MB.
-- POST /api/requests/{id}/dispatch: JSON {"department":"Housekeeping & Facilities"}. Copies the SERVER-STORED transcript to one shared department inbox. Client-supplied transcript text is ignored.
-- GET /api/departments/queue?department=...: department deliveries.
-- POST /api/deliveries/{id}/acknowledge: team acknowledgment.
-- GET /api/requests/{id}/history: processing/delivery history.
+The patient and command-line uploader poll until the transcript is saved. Patient polling stops after ten minutes but that does not stop backend processing; check the clerk dashboard before submitting again. Cancellation stops recording or local polling, not a job already received by the backend. No automatic retries. On restart, interrupted jobs are marked Retry required and their recordings retained. To retry explicitly, re-upload the saved recording for the same request with ingest_audio.py. No duplicate department delivery is created.
 
-The future Pi uploads audio to the same /audio endpoint. IDs 1–10 are seeded from the current dashboard; dynamic patient/request creation and classification are not included. Preferred languages are demo profile data; transcription detects the recording language. Recommendations and urgency are seeded demo labels, not predictions based on new audio. Review routing manually; this backend does not establish that a request was medically classified correctly. Seeded nurse requests cannot be redirected to nonclinical departments.
+The original-language transcript is saved; English translation is not enabled. The clerk reviews new requests before routing. Clinical classification, urgency prediction, external phone calls and service-completion signals are not implemented. Typed messages, department acknowledgment, and one satisfaction response per request retain their existing APIs. Feedback is optional and patient initiated after receiving help.
 
-Duplicate transcription and department delivery are blocked. Failed transcription is marked Retry required and can be resubmitted. No automatic paid retry occurs. If the server stops during transcription, restart marks interrupted work Retry required; a retry might incur another API charge. A successful transcript cannot be replaced through this API, preserving delivery integrity. Data and histories persist in SQLite. Raw audio remains in transcript-data/.
+## Validation
 
-Department transfer here means a REAL persistent insertion into this app's department inbox, not email, SMS, or an external hospital system. Department users view the inbox in the local demo; remote devices need a secured deployment. This local server and shared demo token are not production identity/access controls. Do not use real patient records for this demo. No live ElevenLabs API request was made while developing the code. Tests mock the provider.
+Run `python3 -m unittest discover -s hospital-dashboard -p 'test_*.py'`. Automated workflow tests use a fake recognizer; real recognition must also be tested. Benchmark 5/10/20-second recordings on the actual Pi, tracking latency, RAM, temperature, silence, background noise and language-specific mistakes. Do not infer clinical accuracy from a successful transcription.
 
-Run tests: python3 test_backend.py
+Only one backend can use a data directory at a time: a process lock rejects a second instance on Linux/macOS. Back up the existing database before migration. The schema adds a nullable error column; no existing transcript, recording, feedback or delivery is deleted.
 
-Reference: https://elevenlabs.io/docs/api-reference/speech-to-text/convert
+## Verified on development Mac
 
-## Patient feedback API
-POST /api/requests/{id}/feedback with X-Bello-Token and JSON: {"rating":5,"resolution_answer":"yes","comment":"Thank you"}. rating is an integer 1–5; resolution_answer is yes, partly, or no; comment is optional and at most 2000 characters. One response per request. The future patient UI should offer this at the end of service. The current backend has no completion gate, patient-specific identity, or invitation tracking; add those for real deployment. Never put the shared backend token in an untrusted patient client: use a request-specific authenticated integration.
+The previous environment used Python 3.13.0a4, which cannot load the NumPy wheels used here. A separate stable Python 3.12 environment was created at patient-app/.venv-local; the older environment was preserved. On this Mac launch with `cd ~/Desktop/Bello-repo/patient-app` then `./.venv-local/bin/python run_local.py`. Use stable Python (not an alpha build) on the Pi.
+
+Local verification: faster-whisper 1.2.1, CTranslate2 4.8.2, NumPy 2.2.6 and PyAV 16.1.0. PyAV is constrained below 17 because a newer installed decoder removed an argument used by this faster-whisper release. A spoken blanket request transcribed correctly in approximately 0.47 seconds with 234 MiB peak process memory on this Mac. These are single-clip development measurements, not Pi benchmarks or accuracy validation. A temporary-database HTTP test verified recording -> queued job -> original transcript -> department delivery -> acknowledgment -> feedback with offline model mode enabled.
+
+Benchmark on the Pi: `patient-app/.venv-local/bin/python hospital-dashboard/benchmark_stt.py /path/to/request.wav`. Measure CPU temperature separately, for example with the Pi's system monitoring tools, and compare repeated runs after warm-up. Original-language and noisy/quiet speech accuracy still require representative recordings.
+
+### Live listening text
+The patient screen displays provisional local transcripts while recording. A cumulative WAV snapshot is offered every three seconds after speech starts. One background worker shares the cached model, gives completed recordings priority, and replaces pending snapshots rather than accumulating them. Partial text may change; only the final recording produces a saved, dispatchable transcript. Silence or failure in a partial does not fail the final upload. Temporary snapshots expire after 60 seconds and are held in memory (maximum four sessions). This is incremental transcription, not guaranteed per-word streaming; latency on a Raspberry Pi 4 must be measured on that device.
