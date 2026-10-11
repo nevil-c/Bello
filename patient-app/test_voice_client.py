@@ -4,6 +4,24 @@ from unittest.mock import patch
 import voice_client as client
 
 class Tests(unittest.TestCase):
+ def test_chime_uses_native_output_rate_and_stereo(self):
+  from unittest.mock import Mock
+  import numpy as np
+  sd=Mock()
+  sd.query_devices.return_value={'default_samplerate':48000,'max_output_channels':2}
+  client.play_recording_ding(sd)
+  tone=sd.play.call_args.args[0]
+  self.assertEqual(tone.shape,(48000,2))
+  self.assertEqual(sd.play.call_args.kwargs['samplerate'],48000)
+  self.assertTrue(np.all(tone[0]==0) and np.all(tone[-1]==0))
+  self.assertLess(float(np.max(np.abs(tone))),1)
+  self.assertLess(float(np.max(np.abs(tone[-480:]))),.0001)
+ def test_chime_supports_mono_output(self):
+  from unittest.mock import Mock
+  sd=Mock()
+  sd.query_devices.return_value={'default_samplerate':44100,'max_output_channels':1}
+  client.play_recording_ding(sd)
+  self.assertEqual(sd.play.call_args.args[0].shape,(44100,))
  def test_async_upload_polls_completed_transcript(self):
   results=[{'request_id':18},{'request_id':18,'state':'Queued'},
            {'request_id':18,'state':'Transcribing','transcript':None},

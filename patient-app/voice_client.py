@@ -44,21 +44,36 @@ def wait_for_transcript(request_id,cancel,timeout=600):
         cancel.wait(1)
     raise RuntimeError(f'Request {request_id} is still unconfirmed. Check the clerk dashboard before recording again.')
 
+def recording_chime(rate):
+    """A one-second bell with a soft attack and a silent, smooth tail."""
+    import numpy as np
+    t=np.arange(rate,dtype=np.float64)/rate
+    phase=np.linspace(0,1,rate)
+    fade=1-(6*phase**5-15*phase**4+10*phase**3)
+    attack=np.sin(np.pi/2*np.clip(t/.025,0,1))**2
+    bell=(np.sin(2*np.pi*660*t)+.16*np.sin(2*np.pi*1320*t)*np.exp(-4*t)
+          +.05*np.sin(2*np.pi*1980*t)*np.exp(-6*t))
+    tone=.75*bell*np.exp(-1.8*t)*fade*attack
+    tone[0]=tone[-1]=0
+    return tone.astype('float32')
+
 def play_recording_ding(sd):
-    """One-second chime played alongside microphone capture."""
+    """Play at the speaker's native rate, independently of microphone capture."""
     try:
         import numpy as np
-        rate=16000
-        t=np.arange(rate)/rate
-        # Smooth attack and a gradual fade whose slope reaches zero at silence.
-        phase=np.linspace(0,1,rate)
-        fade=1-(6*phase**5-15*phase**4+10*phase**3)
-        attack=np.sin(np.pi/2*np.clip(t/.02,0,1))**2
-        tone=.85*np.sin(2*np.pi*880*t)*np.exp(-2*t)*fade*attack
-        tone[-1]=0
-        sd.play(tone.astype('float32'),samplerate=rate,blocking=True)
-    except Exception:
-        pass  # An unavailable speaker must not prevent microphone recording.
+        device=os.environ.get('BELLO_OUTPUT_DEVICE')
+        if device is not None and device.isdigit():device=int(device)
+        info=sd.query_devices(device,'output')
+        rate=int(info['default_samplerate'])
+        channels=min(2,int(info['max_output_channels']))
+        if channels<1:return
+        sd.check_output_settings(device=device,samplerate=rate,channels=channels,dtype='float32')
+        tone=recording_chime(rate)
+        if channels==2:tone=np.repeat(tone[:,None],2,axis=1)
+        sd.play(tone,samplerate=rate,device=device,blocking=True)
+    except Exception as error:
+        print(f'Recording chime unavailable: {error}',flush=True)
+        # An unavailable speaker must not prevent microphone recording.
 
 def microphone_settings(sd):
     """Prefer recognition rate, falling back to the microphone's native rate."""
