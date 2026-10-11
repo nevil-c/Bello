@@ -77,10 +77,11 @@ CREATE TABLE IF NOT EXISTS history(id INTEGER PRIMARY KEY,request_id INTEGER,eve
             if name not in columns:c.execute(f'ALTER TABLE requests ADD COLUMN {name} {kind}')
         if seed_demo and not c.execute('SELECT 1 FROM requests LIMIT 1').fetchone():
             # Demo rows are typed requests, so they go through translation and routing like real ones.
-            # They have no history and are marked, so the cloud archive never receives them.
+            # They have no history and are marked, so the cloud archive never receives them. Each row's
+            # minutes_ago backdates it, so the clerk's waiting column reads like a shift already under way.
             for sample in json.loads((ROOT/'demo_requests.json').read_text(encoding='utf-8')):
                 c.execute("INSERT INTO requests(room,sample_text,transcript,language,ui_language,state,created) VALUES(?,?,?,?,?,'Classifying',?)",
-                    (sample['room'],DEMO_MARK,sample['text'],sample.get('language','en'),sample.get('language','en'),time.time()))
+                    (sample['room'],DEMO_MARK,sample['text'],sample.get('language','en'),sample.get('language','en'),time.time()-sample.get('minutes_ago',0)*60))
         interrupted=list(c.execute("SELECT id FROM requests WHERE state IN ('Queued','Transcribing')"))
         for row in interrupted:
             c.execute("UPDATE requests SET state='Retry required',error='Processing interrupted. Recording retained; retry explicitly.' WHERE id=?",(row['id'],))
