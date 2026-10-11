@@ -171,6 +171,7 @@ class App:
         self.chrome_key = None   # theme/large/a11y the current chrome was built for
         self.built_gen = 0       # gen the current content belongs to
         self.fit_for = None      # window size the current layout_scale was fitted to
+        self.pages = {}          # screen -> the frame holding it, built once and kept
 
         self.screen = "home"     # home | listen | type
         self.state = "speaking"  # speaking | listening | sent | nothing   (listen screen)
@@ -277,28 +278,21 @@ class App:
         chrome_key = (self.large, self.a11y_open, self.filter_i)
         content_key = (self.screen, chrome_key)
         rechrome = force or self.chrome_key != chrome_key
-        recontent = rechrome or self.built_key != content_key
         self.gen += 1
         self.pause_started = None
         self.pause_display = 0.0
         self.cancel_progress = None
         self.background_sweep = None
-        self.mic_visual = None
-        if not recontent:
-            # Same screen, new state. The content is current for this generation, so the layout
-            # and fit handlers must keep working (they are keyed on it).
-            self.built_gen = self.gen
-            self.refresh()
-            return
         self.built_key = content_key
         self.chrome_key = chrome_key
-        started = time.perf_counter()
         t = self.t
+        started = time.perf_counter()
         if rechrome:
             # No layout_scale reset: the fit owns it, and resetting here would discard the scale
             # the fit just measured (it rebuilds through this path) and pop the page every time.
             for w in self.root.winfo_children():
                 w.destroy()
+            self.pages = {}          # the pages went with the chrome
             self.root.configure(bg=t["bg"])
             top = tk.Frame(self.root, bg=t["bg"])
             top.pack(fill="x", padx=self.px(24), pady=(self.px(16), 0))
@@ -314,46 +308,60 @@ class App:
             self.inner.bind("<Configure>", self.layout)
             for event in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
                 self.root.unbind(event)
-        else:
-            for w in self.inner.winfo_children():
-                w.destroy()
-            self.words_label = None
+            # Build the screens that get revisited now, while nobody is watching, so that no
+            # click is ever the one that builds a page (and none of them can rescale the layout
+            # later: the fit measures them all below).
+            for screen in ("listen", "type"):
+                page = tk.Frame(self.inner, bg=t["bg"])
+                self.pages[screen] = page
+                getattr(self, "draw_" + screen)(page)
+        # A page is built once and kept: switching screens packs it. Rebuilding it here is what
+        # flashes on a Pi, where every widget is its own X window. A screen with no refresh_* hook
+        # cannot be updated in place, so it rebuilds just its own page.
+        refresh = getattr(self, "refresh_" + self.screen, None)
+        page = self.pages.get(self.screen)
+        if page is not None and not page.winfo_exists():
+            page = None
+        if page is not None and refresh is None:
+            page.destroy()
+            page = None
+        built = page is None
+        if built:
+            page = tk.Frame(self.inner, bg=t["bg"])
+            self.pages[self.screen] = page
+            getattr(self, "draw_" + self.screen)(page)
+        for other in list(self.pages.values()):
+            if other is not page:
+                other.pack_forget()
+        page.pack()
+        if not built and refresh is not None:
+            refresh()
         self.built_gen = self.gen
-        getattr(self, "draw_" + self.screen)(self.inner)
-        slow = (time.perf_counter() - started) * 1000
-        if slow > SLOW_REBUILD_MS:
+        if built and (time.perf_counter() - started) * 1000 > SLOW_REBUILD_MS:
             # Visible on the device when the layout cannot keep up: paste this line.
-            print(f"UI: rebuilding the {self.screen} screen took {slow:.0f} ms", flush=True)
+            print(f"UI: building the {self.screen} screen took "
+                  f"{(time.perf_counter() - started) * 1000:.0f} ms", flush=True)
         if self.a11y_open:
             self.draw_a11y()
-        self.root.after_idle(self.fit)
         if self.screen == "listen" and self.state == "listening":
             self.root.after(33, self.animate_pause_background, self.flow, self.gen)
 
-    def refresh(self):
-        """Reconfigure the current screen in place; screens without a refresh redraw instead."""
-        fn = getattr(self, "refresh_" + self.screen, None)
-        if fn is None:
-            self.render(force=True)
-            return
-        fn()
-
     def fit(self):
-        # Scale to the space the window actually has, and only to that: content that merely
-        # grew (a longer partial transcript) must never rescale and rebuild the whole screen.
-        # Keyed on the WINDOW size, not the canvas: shrinking the layout also shrinks the
-        # px()-scaled header, which changes the canvas under us and re-triggers this forever.
-        # Fitted once per (window size, screen): a fit must never trigger itself, or px()
-        # truncation makes each pass a little smaller and the page creeps down a full rebuild
-        # at a time.
+        # One scale has to fit every kept page, or moving between screens would rescale and
+        # rebuild the whole UI. Measured on the WINDOW size, not the canvas: shrinking the layout
+        # also shrinks the px()-scaled header, which changes the canvas under us (and an unmapped
+        # page still reports its own requested size, so all pages can be measured without showing
+        # them). Fitting only on a real resize means a click never triggers this at all.
         if self.built_gen != self.gen or not self.canvas.winfo_exists(): return
         window = (self.root.winfo_width(), self.root.winfo_height())
         if min(window) <= MIN_CANVAS or (window, self.built_key) == self.fit_for: return
         available = (self.canvas.winfo_width(), self.canvas.winfo_height())
         if min(available) <= MIN_CANVAS: return
-        required_w = max(1, self.inner.winfo_reqwidth()) / self.layout_scale
-        required_h = max(1, self.inner.winfo_reqheight()) / self.layout_scale
-        target = max(MIN_LAYOUT_SCALE, min(1.0, (available[0] - 8) / required_w, (available[1] - 8) / required_h))
+        pages = [p for p in self.pages.values() if p.winfo_exists()]
+        required_w = max([self.inner.winfo_reqwidth()] + [p.winfo_reqwidth() for p in pages]) / self.layout_scale
+        required_h = max([self.inner.winfo_reqheight()] + [p.winfo_reqheight() for p in pages]) / self.layout_scale
+        target = max(MIN_LAYOUT_SCALE, min(1.0, (available[0] - 8) / max(1, required_w),
+                                           (available[1] - 8) / max(1, required_h)))
         self.fit_for = (window, self.built_key)
         if abs(target - self.layout_scale) > .005:
             self.layout_scale = target
@@ -397,8 +405,15 @@ class App:
         c.bind("<Button-1>", lambda e: self.start_call())
         c.pack()
         self.label(f, "Press to call your nurse", 22, color="muted").pack(pady=(self.px(22), 0))
+        self.home_rate = self.button(f, "Rate my last service", self.open_feedback, size=19)
+        self.refresh_home()
+
+    def refresh_home(self):
+        # The kept page must re-evaluate what only the session can change.
         if self.request_id and self.request_id not in self.feedback_done:
-            self.button(f, "Rate my last service", self.open_feedback, size=19).pack(pady=self.px(12))
+            self.home_rate.pack(pady=self.px(12))
+        else:
+            self.home_rate.pack_forget()
 
     def draw_listen(self, f):
         # Built once with every widget any state can use, then refresh_listen() shows/hides and
@@ -535,9 +550,8 @@ class App:
                          insertbackground=t["ink"], relief="flat", bd=self.px(10), width=36)
         entry.pack(fill="x")
         entry.bind("<Return>", lambda e: self.send_typed())
-        entry.focus_set()
-        entry.icursor("end")
-
+        self.type_entry = entry
+        self.refresh_type()
         kb = tk.Frame(f, bg=t["bg"])
         kb.pack(pady=self.px(14))
         for keys in ("QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"):
@@ -552,6 +566,16 @@ class App:
         self.key(row, "Send", self.send_typed, 7, send=True).pack(side="left", padx=self.px(3))
 
         self.button(f, "✕   Cancel", self.cancel, size=24, danger=False).pack(pady=(self.px(10), 0))
+
+    def refresh_type(self):
+        # The page is built up front, so hand the keyboard back only once it is on screen --
+        # otherwise the hidden text field would swallow Space/Enter on the home screen.
+        self.root.after_idle(self.focus_type)
+
+    def focus_type(self):
+        if self.screen != "type" or not self.type_entry.winfo_exists(): return
+        self.type_entry.focus_set()
+        self.type_entry.icursor("end")
 
     def key(self, parent, text, cmd, width=3, send=False):
         t = self.t
