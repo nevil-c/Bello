@@ -34,6 +34,10 @@ def settings():
 
 LEAD_IN = 1   # seconds of silence before the voice: the person who just answered is still lifting the phone
 HANGUP = 2    # seconds of silence after the last word: the document then ends and Twilio hangs up
+# The plain Twilio voices ignore SSML, so an excited greeting needs a voice that supports it. Any
+# Polly.* or Google.* name works here; the rest of the message is spoken in the same voice.
+VOICE = 'Polly.Joanna'
+GREETING = '<prosody rate="fast" pitch="+25%">Bello!</prosody>'
 
 
 def twiml(request_id, room, department):
@@ -42,9 +46,9 @@ def twiml(request_id, room, department):
     the closing <Pause> is the hang-up: Twilio ends the call when the document runs out. Escaped, because
     'Housekeeping & Facilities' is a department name and a bare & is not XML — Twilio would refuse
     the whole call."""
-    return ('<Response><Pause length="{lead}"/><Say>Hi. Bello: request {rid}, room {room}, {team}.'
-            '</Say><Pause length="{hangup}"/></Response>').format(
-        lead=LEAD_IN, hangup=HANGUP,
+    return ('<Response><Pause length="{lead}"/><Say voice="{voice}">{greeting} Request {rid},'
+            ' room {room}, {team}.</Say><Pause length="{hangup}"/></Response>').format(
+        lead=LEAD_IN, hangup=HANGUP, voice=VOICE, greeting=GREETING,
         rid=escape(str(request_id)), room=escape(str(room or 'unassigned')), team=escape(department))
 
 
@@ -84,8 +88,10 @@ if __name__ == '__main__':
     # Self-check: the XML escaping, the request shape, and that an unset-up Twilio fails loudly
     # instead of dialling.
     said = twiml(8, '203 B', 'Housekeeping & Facilities')
-    # Verbatim, so the lead pause, the greeting, the escaping and the closing pause are all pinned at once.
-    assert said == ('<Response><Pause length="1"/><Say>Hi. Bello: request 8, room 203 B, '
+    # Verbatim, so the lead pause, the excited greeting, the Polly voice, the escaping and the closing
+    # pause are all pinned at once.
+    assert said == ('<Response><Pause length="1"/><Say voice="Polly.Joanna">'
+                    '<prosody rate="fast" pitch="+25%">Bello!</prosody> Request 8, room 203 B, '
                     'Housekeeping &amp; Facilities.</Say><Pause length="2"/></Response>'), said
     assert '<Gather' not in said and '<Redirect' not in said and '<Hangup' not in said, said   # one-way, self-terminating
     assert twiml(9, None, 'Food Services').count('unassigned') == 1
