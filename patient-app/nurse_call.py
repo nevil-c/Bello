@@ -159,6 +159,8 @@ class App:
         self.root = root
         self.voice = Voice(demo)
         self.dpi = root.winfo_fpixels("1i") / 96.0
+        self.layout_scale = 1.0
+        self.layout_key = None
 
         self.screen = "home"     # home | listen | type
         self.state = "speaking"  # speaking | listening | sent | nothing   (listen screen)
@@ -192,7 +194,10 @@ class App:
         root.protocol("WM_DELETE_WINDOW", lambda: (self.voice.stop(), root.destroy()))
         root.title("Nurse Call")
         root.geometry(f"{self.px(1000)}x{self.px(740)}")
-        root.minsize(self.px(820), self.px(640))
+        root.minsize(min(self.px(820), root.winfo_screenwidth()),
+                     min(self.px(640), root.winfo_screenheight()))
+        # Start as a borderless kiosk on the current display.
+        root.attributes("-fullscreen", True)
         root.bind("<F11>", lambda e: root.attributes("-fullscreen", not root.attributes("-fullscreen")))
         root.bind("<Escape>", self.on_escape)
         root.bind("<space>", self.on_call_key)
@@ -211,7 +216,7 @@ class App:
         return theme
 
     def px(self, n):
-        return int(n * self.dpi)
+        return max(1, int(n * self.dpi * self.layout_scale))
 
     def font(self, size, bold=False):
         scale = 1.85 if self.large else 1.6
@@ -249,6 +254,10 @@ class App:
 
     # ---- drawing
     def render(self):
+        key = (self.screen, self.state, self.large, self.a11y_open)
+        if key != self.layout_key:
+            self.layout_key = key
+            self.layout_scale = 1.0
         self.gen += 1
         self.words_label = None
         self.pause_started = None
@@ -269,27 +278,34 @@ class App:
         body = tk.Frame(self.root, bg=t["bg"])
         body.pack(fill="both", expand=True, padx=self.px(32), pady=self.px(12))
         canvas=tk.Canvas(body,bg=t['bg'],highlightthickness=0)
-        scroll=tk.Scrollbar(body,orient='vertical',command=canvas.yview)
-        canvas.configure(yscrollcommand=scroll.set)
-        canvas.pack(side='left',fill='both',expand=True)
+        canvas.pack(fill='both',expand=True)
         inner=tk.Frame(canvas,bg=t['bg'])
         window=canvas.create_window(0,0,window=inner,anchor='n')
+        generation=self.gen
+        fit_pending=[False]
+        def fit():
+            fit_pending[0]=False
+            if generation!=self.gen or not canvas.winfo_exists():return
+            available_w=max(1,canvas.winfo_width()-8)
+            available_h=max(1,canvas.winfo_height()-8)
+            required_w=max(1,inner.winfo_reqwidth())
+            required_h=max(1,inner.winfo_reqheight())
+            ratio=min(available_w/required_w,available_h/required_h)
+            if ratio<.98 and self.layout_scale>.20:
+                self.layout_scale=max(.20,self.layout_scale*ratio*.96)
+                self.render()
         def layout(event=None):
-            if not canvas.winfo_exists():return
+            if generation!=self.gen or not canvas.winfo_exists():return
             w,h=canvas.winfo_width(),canvas.winfo_height()
             needed=inner.winfo_reqheight()
             canvas.coords(window,w/2,max(0,(h-needed)/2))
-            canvas.configure(scrollregion=(0,0,w,max(h,needed)))
-            if needed>h:scroll.pack(side='right',fill='y')
-            else:scroll.pack_forget()
+            if w>10 and h>10 and not fit_pending[0]:
+                fit_pending[0]=True
+                self.root.after_idle(fit)
         canvas.bind('<Configure>',layout)
         inner.bind('<Configure>',layout)
-        def wheel(event):
-            if canvas.winfo_exists() and inner.winfo_reqheight()>canvas.winfo_height():
-                canvas.yview_scroll(-1 if event.delta>0 or event.num==4 else 1,'units')
-        self.root.bind('<MouseWheel>',wheel)
-        self.root.bind('<Button-4>',wheel)
-        self.root.bind('<Button-5>',wheel)
+        for event in ('<MouseWheel>','<Button-4>','<Button-5>'):
+            self.root.unbind(event)
         getattr(self, "draw_" + self.screen)(inner)
 
         if self.a11y_open:
