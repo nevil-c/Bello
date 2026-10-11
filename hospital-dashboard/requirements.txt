@@ -1,3 +1,8 @@
+# LAN server (M5 Mac): speech recognition, translation and request routing.
 faster-whisper==1.2.1
 numpy>=1.26,<2.3
 av>=11,<17
+# Routing model (decision-model/); brings torch and transformers, which translation.py also uses.
+laya>=0.4.2,<0.5
+transformers>=4.48,<5
+sentencepiece>=0.2,<0.3

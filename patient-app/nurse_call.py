@@ -15,6 +15,10 @@ Install requirements.txt and configure BELLO_SERVER and BELLO_API_TOKEN.
 """
 import os
 from voice_client import capture_and_submit, record, submit_audio, submit_text, submit_empty, submit_feedback, Cancelled
+from voice_client import resolve_room, open_requests, ui_strings
+import voice_client
+import i18n
+from i18n import tr
 import queue
 import subprocess
 import sys
@@ -47,7 +51,8 @@ THEMES = {
                   listen="#D29A5A", soft="#2A211A", ok="#B8A35A",
                   stop="#B23A2A", stop_on="#F3E6D3", stop_dark="#8E2E21"),
 }
-FILTERS = [("standard", "Standard"), ("contrast", "High contrast"), ("night", "Night (dim)")]
+FILTERS = [("standard", "filter_standard"), ("contrast", "filter_contrast"), ("night", "filter_night")]
+HOLD_MS = 2000   # staff hold "Staff: done" this long, so a patient's tap does not resolve the request
 
 # ---------------------------------------------------------------- speech
 
@@ -180,6 +185,11 @@ class App:
         self.filter_i = 0
         self.large = False
         self.a11y_open = False
+        self.lang_open = False
+        self.open_here = False   # this bed has a request staff have not marked done
+        self.staff_notice = ""
+        self.hold_job = None
+        self.resolving = False
         self.flow = 0            # bumps whenever a voice exchange is abandoned
         self.gen = 0             # bumps on every redraw (stops old animations)
         self.typed = tk.StringVar()
@@ -218,6 +228,14 @@ class App:
               f"session {'wayland' if os.environ.get('WAYLAND_DISPLAY') else os.environ.get('DISPLAY', 'none')}, "
               f"screen {root.winfo_screenwidth()}x{root.winfo_screenheight()}, "
               f"dpi {self.dpi:.2f}, scale {self.layout_scale:.3f}", flush=True)
+
+        code = i18n.saved_language()
+        i18n.apply(code, i18n.local_strings(code))
+        voice_client.UI_LANGUAGE = code
+        if not demo:
+            if code != "en":
+                self.fetch_strings(code)
+            self.background(lambda: open_requests(f"{ROOM} · {BED}"), self.set_open)
 
         self.render()
         self.poll()
@@ -274,8 +292,9 @@ class App:
         # on a Pi without a compositor you watch them get unmapped and remapped one by one, which
         # is the flash on every press. So: reuse the chrome, rebuild only the content, and for a
         # state change on the same screen reconfigure the widgets we already have.
-        chrome_key = (self.large, self.a11y_open, self.filter_i)
-        content_key = (self.screen, chrome_key)
+        chrome_key = (self.large, self.a11y_open, self.lang_open, self.filter_i, i18n.language)
+        # The home screen grows a staff button while a request is open; it needs its own fit.
+        content_key = (self.screen, chrome_key, self.screen == "home" and (self.open_here, bool(self.staff_notice)))
         rechrome = force or self.chrome_key != chrome_key
         recontent = rechrome or self.built_key != content_key
         self.gen += 1
@@ -302,7 +321,7 @@ class App:
             self.root.configure(bg=t["bg"])
             top = tk.Frame(self.root, bg=t["bg"])
             top.pack(fill="x", padx=self.px(24), pady=(self.px(16), 0))
-            self.label(top, f"Room {ROOM}   ·   Bed {BED}", 17, color="muted").pack(side="left")
+            self.label(top, f"{tr('room')} {ROOM}   ·   {tr('bed')} {BED}", 17, color="muted").pack(side="left")
             self.a11y_button(top).pack(side="right")
             body = tk.Frame(self.root, bg=t["bg"])
             body.pack(fill="both", expand=True, padx=self.px(32), pady=self.px(12))
@@ -382,7 +401,7 @@ class App:
         c.create_line(s * .5, s * .4, s * .5, s * .62, fill=ink, width=w)
         c.create_line(s * .32, s * .95, s * .5, s * .62, s * .68, s * .95, fill=ink, width=w, capstyle="round")
         c.pack(side="left")
-        self.label(box, "Accessibility", 18, True).pack(side="left", padx=(self.px(8), 0))
+        self.label(box, tr("accessibility"), 18, True).pack(side="left", padx=(self.px(8), 0))
         self.clickable(holder, self.open_a11y)
         return holder
 
@@ -393,12 +412,17 @@ class App:
         c.create_oval(0, 0, d, d, fill=t["halo"], outline="")
         m = self.px(22)
         c.create_oval(m, m, d - m, d - m, fill=t["call"], outline="")
-        c.create_text(d / 2, d / 2, text="CALL", fill=t["on"], font=self.font(78, True))
+        c.create_text(d / 2, d / 2, text=tr("call"), fill=t["on"], font=self.font(78, True))
         c.bind("<Button-1>", lambda e: self.start_call())
         c.pack()
-        self.label(f, "Press to call your nurse", 22, color="muted").pack(pady=(self.px(22), 0))
+        self.label(f, tr("press_to_call"), 22, color="muted").pack(pady=(self.px(22), 0))
         if self.request_id and self.request_id not in self.feedback_done:
-            self.button(f, "Rate my last service", self.open_feedback, size=19).pack(pady=self.px(12))
+            self.button(f, tr("rate_last_service"), self.open_feedback, size=19).pack(pady=self.px(12))
+        if self.open_here:
+            self.label(f, tr("open_requests"), 17, color="muted").pack(pady=(self.px(10), 0))
+            self.staff_button(f).pack(pady=self.px(8))
+        if self.staff_notice:
+            self.label(f, self.staff_notice, 17, color="muted", wrap=700).pack(pady=self.px(6))
 
     def draw_listen(self, f):
         # Built once with every widget any state can use, then refresh_listen() shows/hides and
@@ -418,43 +442,45 @@ class App:
                                     bg=t["soft"], wraplength=self.px(650), width=0, justify="center")
         self.words_label.pack()
         self.listen_actions = tk.Frame(f, bg=t["bg"])
-        self.listen_submit = self.button(self.listen_actions, "Submit request", self.send_empty, size=24)
-        self.listen_retry = self.button(self.listen_actions, "Try again", self.ask, size=24)
-        self.listen_rate_note = self.label(self.listen_actions, "After you receive help, you can rate the service.", 17, color="muted")
-        self.listen_rate = self.button(self.listen_actions, "Rate my service", self.open_feedback, size=20)
-        self.listen_leave = self.button(self.listen_actions, "✕   Cancel", self.cancel, size=24)
+        self.listen_submit = self.button(self.listen_actions, tr("submit_request"), self.send_empty, size=24)
+        self.listen_retry = self.button(self.listen_actions, tr("try_again"), self.ask, size=24)
+        self.listen_rate_note = self.label(self.listen_actions, tr("rate_note"), 17, color="muted")
+        self.listen_rate = self.button(self.listen_actions, tr("rate_service"), self.open_feedback, size=20)
+        self.listen_staff = self.staff_button(self.listen_actions)
+        self.listen_another = self.button(self.listen_actions, tr("another_request"), self.cancel, size=22)
+        self.listen_leave = self.button(self.listen_actions, "✕   " + tr("cancel"), self.cancel, size=24)
         self.refresh_listen()
 
     def refresh_listen(self):
         t = self.t
         st = self.state
-        self.listen_title.configure(text={"speaking": "Please state your concern.",
-                                          "listening": "Please state your concern.",
-                                          "paused": "Please state your concern.",
-                                          "processing": "Sending your message…",
-                                          "error": "Message was not confirmed.",
-                                          "sent": "Your message has been sent.",
-                                          "empty": "Empty request detected.",
-                                          "nothing": "No message was sent."}[st], fg=t["ink"], bg=t["bg"])
-        hint = {"speaking": "Please wait…",
-                "listening": "Stop talking to send your request",
-                "paused": "Paused",
-                "processing": "Saving your message" if self.keyboard else "Processing your recording",
-                "error": "Please try again or use your bedside call bell.",
-                "sent": "",
-                "empty": "Do you want to submit?",
-                "nothing": "I couldn't hear a message."}[st]
+        self.listen_title.configure(text=tr({"speaking": "state_concern",
+                                             "listening": "state_concern",
+                                             "paused": "state_concern",
+                                             "processing": "sending",
+                                             "error": "not_confirmed",
+                                             "sent": "sent",
+                                             "empty": "empty_detected",
+                                             "nothing": "nothing_sent"}[st]), fg=t["ink"], bg=t["bg"])
+        hint = tr({"speaking": "please_wait",
+                   "listening": "stop_to_send",
+                   "paused": "paused",
+                   "processing": "saving_message" if self.keyboard else "processing_recording",
+                   "error": "error_hint",
+                   "sent": "help_coming",
+                   "empty": "submit_question",
+                   "nothing": "could_not_hear"}[st])
         self.listen_hint.configure(text=hint, font=self.font(22, st == "listening"),
                                    fg=t["listen"] if st == "listening" else t["muted"], bg=t["bg"])
         self.mic_canvas.itemconfigure(self.mic_disc,
                                       fill=t["listen"] if st == "listening" else blend(t["listen"], t["bg"], .45))
         self.words_label.configure(
-            text="No words were detected." if st == "empty" else self.words or "Your words will show here",
+            text=tr("no_words") if st == "empty" else self.words or tr("words_here"),
             font=self.font(28, bool(self.words)), fg=t["ink"] if self.words else t["muted"])
         # Re-pack in reading order: pack() appends, so a partial re-pack would reorder the page.
         for w in (self.listen_title, self.mic_canvas, self.listen_hint, self.listen_box,
                   self.listen_actions, self.listen_submit, self.listen_retry, self.listen_rate_note,
-                  self.listen_rate, self.listen_leave):
+                  self.listen_rate, self.listen_staff, self.listen_another, self.listen_leave):
             w.pack_forget()
         self.listen_title.pack()
         if self.screen == "listen" and not self.keyboard and st in ("speaking", "listening", "paused"):
@@ -469,9 +495,12 @@ class App:
         if st == "sent" and self.request_id and self.request_id not in self.feedback_done:
             self.listen_rate_note.pack()
             self.listen_rate.pack(pady=self.px(8))
-        # button() returns the bordered holder frame; the label lives in its only child.
-        self.listen_leave.winfo_children()[0].configure(text="Done" if st == "sent" else "✕   Cancel")
-        self.listen_leave.pack(pady=(self.px(16), 0))
+        if st == "sent":
+            # Leaving this screen must not resolve the request: only staff, with a deliberate hold.
+            self.listen_staff.pack(pady=(self.px(16), 0))
+            self.listen_another.pack(pady=(self.px(10), 0))
+        else:
+            self.listen_leave.pack(pady=(self.px(16), 0))
 
     def on_pause_progress(self, flow, progress):
         if flow!=self.flow or self.state!='listening':return
@@ -528,7 +557,7 @@ class App:
 
     def draw_type(self, f):
         t = self.t
-        self.label(f, "Type what you need", 32, True).pack()
+        self.label(f, tr("type_need"), 32, True).pack()
         box = tk.Frame(f, bg=t["line"], padx=2, pady=2)
         box.pack(fill="x", pady=(self.px(16), 0))
         entry = tk.Entry(box, textvariable=self.typed, font=self.font(26), bg=t["soft"], fg=t["ink"],
@@ -547,11 +576,11 @@ class App:
                 self.key(row, k, lambda ch=k: self.type_char(ch)).pack(side="left", padx=self.px(3))
         row = tk.Frame(kb, bg=t["bg"])
         row.pack(pady=self.px(3))
-        self.key(row, "Delete", self.backspace, 7).pack(side="left", padx=self.px(3))
-        self.key(row, "Space", lambda: self.type_char(" "), 14).pack(side="left", padx=self.px(3))
-        self.key(row, "Send", self.send_typed, 7, send=True).pack(side="left", padx=self.px(3))
+        self.key(row, tr("key_delete"), self.backspace, 7).pack(side="left", padx=self.px(3))
+        self.key(row, tr("key_space"), lambda: self.type_char(" "), 14).pack(side="left", padx=self.px(3))
+        self.key(row, tr("key_send"), self.send_typed, 7, send=True).pack(side="left", padx=self.px(3))
 
-        self.button(f, "✕   Cancel", self.cancel, size=24, danger=False).pack(pady=(self.px(10), 0))
+        self.button(f, "✕   " + tr("cancel"), self.cancel, size=24, danger=False).pack(pady=(self.px(10), 0))
 
     def key(self, parent, text, cmd, width=3, send=False):
         t = self.t
@@ -571,15 +600,22 @@ class App:
 
         head = tk.Frame(card, bg=t["bg"])
         head.pack(fill="x", pady=(0, self.px(18)))
-        self.button(head, "✕  Exit", self.close_a11y, size=19).pack(side="left")
-        self.label(head, "Accessibility", 28, True).pack(side="left", padx=self.px(18))
+        if self.lang_open:
+            self.button(head, "✕  " + tr("exit"), self.close_languages, size=19).pack(side="left")
+            self.label(head, tr("language"), 28, True).pack(side="left", padx=self.px(18))
+            self.draw_languages(card)
+            return
+        self.button(head, "✕  " + tr("exit"), self.close_a11y, size=19).pack(side="left")
+        self.label(head, tr("accessibility"), 28, True).pack(side="left", padx=self.px(18))
 
         row = tk.Frame(card, bg=t["bg"])
         row.pack()
+        on, off = tr("on"), tr("off")
         tiles = [
-            ("keyboard", "Keyboard", "On" if self.keyboard else "Off", self.keyboard, self.toggle_keyboard),
-            ("colour", "Colour filter", FILTERS[self.filter_i][1], self.filter_i != 0, self.next_filter),
-            ("text", "Larger text", "On" if self.large else "Off", self.large, self.toggle_large),
+            ("keyboard", tr("keyboard"), on if self.keyboard else off, self.keyboard, self.toggle_keyboard),
+            ("colour", tr("colour_filter"), tr(FILTERS[self.filter_i][1]), self.filter_i != 0, self.next_filter),
+            ("text", tr("larger_text"), on if self.large else off, self.large, self.toggle_large),
+            ("language", tr("language"), i18n.NAMES[i18n.language], i18n.language != "en", self.open_languages),
         ]
         for i, tile in enumerate(tiles):
             self.a11y_tile(row, *tile).grid(row=0, column=i, padx=self.px(8), sticky="nsew")
@@ -603,6 +639,12 @@ class App:
         elif icon == "colour":
             c.create_oval(s * .1, s * .1, s * .9, s * .9, outline=ink, width=w)
             c.create_arc(s * .1, s * .1, s * .9, s * .9, start=-90, extent=180, fill=ink, outline=ink)
+        elif icon == "language":
+            # A globe: outline, one meridian and two parallels.
+            c.create_oval(s * .1, s * .1, s * .9, s * .9, outline=ink, width=w)
+            c.create_oval(s * .33, s * .1, s * .67, s * .9, outline=ink, width=w)
+            for y in (.37, .63):
+                c.create_line(s * .14, s * y, s * .86, s * y, fill=ink, width=w)
         else:
             c.create_text(s * .3, s * .62, text="A", fill=ink, font=(self.family, -int(s * .4), "bold"))
             c.create_text(s * .68, s * .55, text="A", fill=ink, font=(self.family, -int(s * .7), "bold"))
@@ -617,6 +659,7 @@ class App:
     def start_call(self):
         if self.a11y_open:
             return
+        self.staff_notice = ""
         self.flow += 1
         self.words = ""
         self.tries = 0
@@ -654,9 +697,9 @@ class App:
     def on_error(self, f, error):
         if f == self.flow:
             print("Patient request error:", error, file=sys.stderr)
-            self.words = ("The microphone is unavailable. Please check microphone access and try again."
+            self.words = (tr("mic_unavailable")
                           if any(word in error.lower() for word in ('microphone', 'portaudio', 'input device'))
-                          else "We could not save your message. Please try again or use your bedside call bell.")
+                          else tr("save_failed"))
             self.state = "error"
             self.render()
 
@@ -673,6 +716,8 @@ class App:
         if text:
             self.request_id = request_id
             self.words = text[0].upper() + text[1:]
+            self.open_here = True
+            self.staff_notice = ""
             self.state = "sent"
             self.render()
         else:
@@ -727,11 +772,11 @@ class App:
         self.render()
 
     def draw_feedback(self, f):
-        self.label(f, "How was the help you received?", 30, True, wrap=800).pack()
+        self.label(f, tr("feedback_title"), 30, True, wrap=800).pack()
         row = tk.Frame(f, bg=self.t['bg']); row.pack()
         self.rating_cards=[]
         # Draw faces directly so Raspberry Pi does not need an emoji font.
-        for n, title in enumerate(('Very unhappy', 'Unhappy', 'Okay', 'Happy', 'Very happy'), 1):
+        for n, title in enumerate([tr(k) for k in ('very_unhappy', 'unhappy', 'okay', 'happy', 'very_happy')], 1):
             card=tk.Frame(row,bg=self.t['bg'],highlightthickness=self.px(3),highlightbackground=self.t['bg']);card.grid(row=0,column=n-1,padx=self.px(7),sticky='n')
             row.columnconfigure(n-1,weight=1,uniform='ratings')
             d=self.px(94)
@@ -755,10 +800,10 @@ class App:
                 target.bind('<Button-1>',lambda e,value=n:self.select_rating(value))
                 target.configure(cursor='hand2')
         self.refresh_rating_highlight()
-        self.label(f, "Was your request resolved?", 27, True).pack(pady=(self.px(20), 0))
+        self.label(f, tr("resolved_question"), 27, True).pack(pady=(self.px(20), 0))
         row = tk.Frame(f, bg=self.t['bg']); row.pack()
         self.resolution_cards=[]
-        for value, title in [('yes', 'Yes'), ('no', 'No')]:
+        for value, title in [('yes', tr('yes')), ('no', tr('no'))]:
             card=tk.Frame(row,bg=self.t['bg'],highlightthickness=self.px(3),highlightbackground=self.t['bg'])
             card.pack(side='left',padx=self.px(10))
             button=tk.Button(card,text=title,font=self.font(26,True),
@@ -769,15 +814,15 @@ class App:
             button.pack()
             self.resolution_cards.append((value,card,button))
         self.refresh_resolution_highlight()
-        self.label(f, "Comment (optional)", 22).pack(pady=(self.px(14), 0))
+        self.label(f, tr("comment_optional"), 22).pack(pady=(self.px(14), 0))
         tk.Entry(f, textvariable=self.comment, width=32, font=self.font(22),
                  state='disabled' if self.feedback_busy else 'normal').pack()
         self.label(f, self.feedback_notice, 17, color="muted", wrap=700).pack(pady=self.px(10))
         if not self.feedback_busy:
             actions=tk.Frame(f,bg=self.t['bg']);actions.pack(pady=self.px(8))
             if self.request_id not in self.feedback_done:
-                self.button(actions, "Submit feedback", self.send_feedback, size=23).pack(side='left',padx=self.px(8))
-            self.button(actions, "Done" if self.request_id in self.feedback_done else "Skip for now", self.cancel, size=22).pack(side='left',padx=self.px(8))
+                self.button(actions, tr("submit_feedback"), self.send_feedback, size=23).pack(side='left',padx=self.px(8))
+            self.button(actions, tr("done") if self.request_id in self.feedback_done else tr("skip"), self.cancel, size=22).pack(side='left',padx=self.px(8))
 
     def select_rating(self, value):
         if self.feedback_busy:return
@@ -816,12 +861,12 @@ class App:
             return
         rating, answer, comment = self.rating.get(), self.resolution.get(), self.comment.get().strip()
         if rating not in range(1, 6) or answer not in ('yes', 'no') or len(comment) > 2000:
-            self.feedback_notice = "Choose a rating and whether your request was resolved. Comments must be under 2,001 characters."
+            self.feedback_notice = tr("feedback_invalid")
             self.render()
             return
         rid = self.request_id
         self.feedback_busy = True
-        self.feedback_notice = "Saving feedback…"
+        self.feedback_notice = tr("saving_feedback")
         self.render()
         def work():
             try:
@@ -835,7 +880,7 @@ class App:
         self.feedback_busy = False
         if error is None:
             self.feedback_done.add(rid)
-        self.feedback_notice = error or "Thank you. Your feedback has been saved."
+        self.feedback_notice = error or tr("feedback_saved")
         if self.screen == "feedback" and self.request_id == rid:
             self.render()
 
@@ -854,6 +899,125 @@ class App:
         self.render()
         self.voice.say("Recording closed.")
 
+    # ---- staff: done at the bedside
+    def staff_button(self, parent):
+        """Press and hold for HOLD_MS. A tap does nothing, so the response time stays honest."""
+        t = self.t
+        holder = tk.Frame(parent, bg=t["ink"], padx=2, pady=2)
+        face = tk.Label(holder, text=tr("staff_done"), font=self.font(20, True), bg=t["bg"], fg=t["ink"],
+                        padx=self.px(40), pady=self.px(14), cursor="hand2")
+        face.pack()
+        face.bind("<ButtonPress-1>", lambda e: self.hold_start(face))
+        face.bind("<ButtonRelease-1>", lambda e: self.hold_cancel(face))
+        face.bind("<Leave>", lambda e: self.hold_cancel(face))
+        return holder
+
+    def hold_start(self, face):
+        if self.resolving:
+            return
+        self.hold_cancel(face)
+        face.configure(text=tr("staff_hold"), bg=self.t["line"])
+        self.hold_job = self.root.after(HOLD_MS, lambda: self.staff_done(face))
+
+    def hold_cancel(self, face):
+        if self.hold_job:
+            self.root.after_cancel(self.hold_job)
+            self.hold_job = None
+        if not self.resolving and face.winfo_exists():
+            face.configure(text=tr("staff_done"), bg=self.t["bg"])
+
+    def staff_done(self, face):
+        self.hold_job = None
+        self.resolving = True
+        face.configure(text="…")
+        room = f"{ROOM} · {BED}"
+        self.background(lambda: None if self.voice.demo else resolve_room(room), self.staff_result,
+                        lambda error: self.staff_result(None, error))
+
+    def staff_result(self, _, error=None):
+        self.resolving = False
+        if error:
+            print("Could not mark requests done:", error, file=sys.stderr)
+            self.staff_notice = tr("staff_failed")
+        else:
+            self.open_here = False
+            self.staff_notice = tr("staff_saved")
+            self.flow += 1
+            self.voice.stop()
+            self.words = ""
+            self.screen = "home"
+        self.render()
+
+    def set_open(self, count):
+        if bool(count) != self.open_here:
+            self.open_here = bool(count)
+            if self.screen == "home":
+                self.render()
+
+    def background(self, work, done, failed=None):
+        """Run work() off the UI thread; done(result) or failed(message) run back on it."""
+        def run():
+            try:
+                self.voice.q.put((done, (work(),)))
+            except Exception as error:
+                if failed:
+                    self.voice.q.put((failed, (str(error),)))
+                else:
+                    print("Background request failed:", error, file=sys.stderr)
+        threading.Thread(target=run, daemon=True).start()
+
+    # ---- screen language
+    def open_languages(self):
+        self.lang_open = True
+        self.render()
+
+    def close_languages(self):
+        self.lang_open = False
+        self.render()
+
+    def draw_languages(self, card):
+        t = self.t
+        box = tk.Frame(card, bg=t["bg"])
+        box.pack(fill="both", expand=True)
+        bar = tk.Scrollbar(box, width=self.px(36))
+        listbox = tk.Listbox(box, font=self.font(19), height=7, width=26, activestyle="none",
+                             bg=t["bg"], fg=t["ink"], selectbackground=t["listen"], selectforeground=t["on"],
+                             highlightthickness=2, highlightbackground=t["line"], relief="flat",
+                             yscrollcommand=bar.set, exportselection=False)
+        bar.configure(command=listbox.yview)
+        for code, name in i18n.LANGUAGES:
+            listbox.insert("end", name)
+        current = [code for code, _ in i18n.LANGUAGES].index(i18n.language)
+        listbox.selection_set(current)
+        listbox.see(current)
+        listbox.pack(side="left", fill="both", expand=True)
+        bar.pack(side="left", fill="y")
+        listbox.bind("<<ListboxSelect>>", lambda e: listbox.curselection() and
+                     self.choose_language(i18n.LANGUAGES[listbox.curselection()[0]][0]))
+
+    def choose_language(self, code):
+        if code == i18n.language:
+            self.close_languages()
+            return
+        i18n.apply(code, i18n.local_strings(code))
+        i18n.save(code)
+        voice_client.UI_LANGUAGE = code
+        self.lang_open = False
+        self.render()
+        if code != "en" and not self.voice.demo:
+            self.fetch_strings(code)
+
+    def fetch_strings(self, code):
+        self.background(lambda: ui_strings(code), lambda strings: self.strings_loaded(code, strings),
+                        lambda error: print(f"Screen text for {code} unavailable ({error}); using built-in text.", file=sys.stderr))
+
+    def strings_loaded(self, code, strings):
+        if code != i18n.language:
+            return
+        i18n.apply(code, strings)
+        i18n.save(code, strings)
+        self.render(force=True)
+
     # ---- accessibility
     def open_a11y(self):
         if self.screen == "listen" and self.state in ("speaking", "listening"):
@@ -865,6 +1029,7 @@ class App:
 
     def close_a11y(self):
         self.a11y_open = False
+        self.lang_open = False
         if self.screen == "listen" and self.state == "paused":
             self.ask()
         else:
@@ -889,7 +1054,9 @@ class App:
 
     # ---- keys
     def on_escape(self, _):
-        if self.a11y_open:
+        if self.lang_open:
+            self.close_languages()
+        elif self.a11y_open:
             self.close_a11y()
         else:
             self.root.attributes("-fullscreen", False)

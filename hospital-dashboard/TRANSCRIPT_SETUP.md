@@ -1,45 +1,80 @@
-# Local recording → transcript → department inbox
+# LAN server setup: recording → transcript → English → routing → dashboards
 
-No ElevenLabs account, API key, or cloud transcription is used.
+No cloud speech service is used. Audio goes from the bedside units to the LAN server over the hospital network, and stays on that server. Only text records are copied to the optional AWS archive.
 
-## Install on Raspberry Pi 4B (8 GB)
+## Server (M5 Mac, 24 GB)
 
-Use 64-bit Raspberry Pi OS (aarch64), Python 3.9+ supported by the installed package wheels, and a USB microphone. Install python3-venv, python3-tk and libportaudio2 using the OS package manager. Use active cooling for sustained CPU work.
-
-From the repository root:
+From the repository root, with a stable Python (3.10–3.12):
 
 ```sh
-python3 -m venv patient-app/.venv-local
-patient-app/.venv-local/bin/python -m pip install -r patient-app/requirements.txt -r hospital-dashboard/requirements.txt
-patient-app/.venv-local/bin/python hospital-dashboard/prepare_model.py
-patient-app/.venv-local/bin/python patient-app/run_local.py
+python3 -m venv hospital-dashboard/.venv
+hospital-dashboard/.venv/bin/python -m pip install -r hospital-dashboard/requirements.txt
+hospital-dashboard/.venv/bin/python hospital-dashboard/prepare_model.py                  # large-v3-turbo
+hospital-dashboard/.venv/bin/python hospital-dashboard/prepare_model.py --model large-v3 # only for BELLO_EN_ENGINE=whisper
+hospital-dashboard/.venv/bin/python hospital-dashboard/prepare_translation_model.py      # NLLB-200, about 2.5 GB
 ```
 
-The explicit download requires internet once. Runtime loads only the local model directory and never downloads a model or uploads audio externally. Models are not committed to Git. Start with multilingual tiny; compare base only after measuring actual Pi latency and accuracy. Configure BELLO_MODEL_DIR for another downloaded directory, BELLO_STT_THREADS (default 3), BELLO_ROOM and BELLO_BED as needed. CPU INT8, beam size 1, one model instance and one transcription worker are used. No GPU is required. Mac performance does not predict Raspberry Pi performance.
+The routing checkpoint is read from `~/laya-out/ckpt/laya-patient`; train it as described in [../decision-model/README.md](../decision-model/README.md), or point `BELLO_LAYA_MODEL` elsewhere. Then start the server:
 
-The launcher starts a matching local backend and patient window and prints the clerk-dashboard URL. The private Bello upload token still protects API endpoints; no speech-provider key is needed. Direct backend launch: `patient-app/.venv-local/bin/python hospital-dashboard/backend.py --port 8766`.
+```sh
+export BELLO_API_TOKEN=<a long random string shared with the bedside units and staff>
+hospital-dashboard/.venv/bin/python hospital-dashboard/backend.py --host 0.0.0.0
+```
 
-## API behavior
+macOS asks once whether Python may accept incoming connections; allow it. The startup lines say whether the routing and translation models loaded. Staff run the Python staff apps against it (`staff-app/clerk.py`, `inbox.py` and `admin.py`, with `BELLO_SERVER=http://<server>:8766`; see [../staff-app/README.md](../staff-app/README.md)) and sign in with the token. `--seed-demo` fills an empty database with the requests in `demo_requests.json`. They go through translation and routing, and they are never sent to the cloud archive.
 
-POST /api/requests creates a room-linked request; optional text creates a typed request without STT. POST /api/requests/{id}/audio accepts raw WAV or MP3 (10 MB maximum) and returns HTTP 202 with state Queued. GET /api/requests/{id} returns Queued, Transcribing, Ready to send, Retry required or Delivered to queue, plus transcript/language/error. Requests and recordings persist in SQLite and transcript-data. A single worker processes jobs; at most four pending/running jobs are admitted. Queue overflow returns 429 without saving the upload. Duplicate queued/completed/delivered uploads return 409.
+| Variable | Default | Purpose |
+|---|---|---|
+| `BELLO_API_TOKEN` | required on the network | The shared token for bedside units and staff pages |
+| `BELLO_WHISPER_MODEL` | `large-v3-turbo` | Whisper model under `models/` (`BELLO_MODEL_DIR` for any other folder) |
+| `BELLO_STT_THREADS` | cores − 2, at most 8 | CPU threads for Whisper. CTranslate2 has no Apple GPU backend, so Whisper runs on CPU INT8 |
+| `BELLO_EN_ENGINE` | `nllb` | `nllb`: NLLB translates the transcript. `whisper`: Whisper translates the audio, which needs `BELLO_WHISPER_MODEL=large-v3` (turbo was not trained to translate) |
+| `BELLO_LAYA_MODEL` | `~/laya-out/ckpt/laya-patient` | Routing checkpoint (`BELLO_LAYA_DEVICE` to force `mps`/`cuda`/`cpu`) |
+| `BELLO_TRANSLATION_MODEL_DIR` | `models/nllb-200-distilled-600M` | NLLB folder (`BELLO_TRANSLATION_DEVICE` to force a device) |
+| `BELLO_DATA_DIR` | `transcript-data/` | SQLite database, recordings and the UI-translation cache |
+| `BELLO_CLOUD_URL`, `BELLO_CLOUD_API_KEY`, `BELLO_SITE_ID` | off | The AWS archive, and the admin dashboard's data ([../aws-backend](../aws-backend/README.md)) |
 
-The patient and command-line uploader poll until the transcript is saved. Patient polling stops after ten minutes but that does not stop backend processing; check the clerk dashboard before submitting again. Cancellation stops recording or local polling, not a job already received by the backend. No automatic retries. On restart, interrupted jobs are marked Retry required and their recordings retained. To retry explicitly, re-upload the saved recording for the same request with ingest_audio.py. No duplicate department delivery is created.
+**Choosing the English engine.** Run `hospital-dashboard/.venv/bin/python hospital-dashboard/benchmark_translate.py --say` on the server. It speaks Cantonese, Mandarin, Spanish and English phrases with macOS voices, then prints both engines' text and timings side by side. Judge them by meaning, especially the clinical phrases. In development on CPU, NLLB rendered 我心口好翳，有啲頭暈 ("my chest feels tight, I'm a little dizzy") as "My mouth is full, my head is full". That is why the clerk dashboard labels every translated request and shows the original text next to it.
 
-The original-language transcript is saved; English translation is not enabled. The clerk reviews new requests before routing. Clinical classification, urgency prediction, external phone calls and service-completion signals are not implemented. Typed messages, department acknowledgment, and one satisfaction response per request retain their existing APIs. Feedback is optional and patient initiated after receiving help.
+**Screen languages.** The bedside Language setting changes the on-screen text only. The spoken language is always detected by Whisper. `GET /api/i18n/<language>` returns the screen strings. A table committed in `patient-app/` wins; Cantonese has one (`strings_yue.json`) because NLLB's Cantonese UI strings were wrong in testing ("Do you want to submit?" came out as "Do you want to surrender?"). Any other language is translated by NLLB once, then cached in `transcript-data/i18n/`. These are unreviewed machine translations; commit a reviewed `strings_<code>.json` to replace one. NLLB-200 is licensed CC-BY-NC 4.0 (non-commercial).
+
+## Bedside units (Raspberry Pi)
+
+Install only the patient app (see [../patient-app/README.md](../patient-app/README.md)), plus `fonts-noto-cjk` so Chinese text renders, then point it at the server:
+
+```sh
+export BELLO_SERVER=http://<server>:8766 BELLO_API_TOKEN=<the shared token> BELLO_ROOM=412 BELLO_BED=B
+patient-app/.venv-local/bin/python patient-app/nurse_call.py
+```
+
+`patient-app/run_local.py` still runs everything on one machine for development (tiny Whisper by default, and a fresh token it prints for the dashboards).
+
+## API
+
+Every `/api/` call needs the `X-Bello-Token` header.
+
+| Call | Purpose |
+|---|---|
+| `POST /api/requests` | Create a request for `room`, with the screen's `ui_language`. Optional `text` makes a typed request; `confirmed_empty: true` makes an empty one, which goes straight to clerk review |
+| `POST /api/requests/{id}/audio` | Raw WAV or MP3 (10 MB maximum); returns 202 `Queued`. At most four jobs are admitted; more returns 429 |
+| `POST /api/requests/{id}/preview` | A WAV snapshot for live partial text while the patient speaks |
+| `GET /api/requests/{id}` | State and original transcript, polled by the bedside unit |
+| `GET /api/requests` | Every request with its translation, routing and timings |
+| `GET /api/stream` | The same list as server-sent events, pushed on every change (the clerk app falls back to polling if the stream keeps failing) |
+| `POST /api/requests/{id}/dispatch` | `{department, call}`: deliver to a department inbox; `call: true` also logs the department call (placeholder) |
+| `POST /api/rooms/resolve` | `{room}`: staff marked the bed's requests done; resolves every open request for that room and bed |
+| `GET /api/rooms/open?room=` | How many requests for the bed are still open |
+| `GET /api/i18n/{language}` | Bedside screen strings |
+| `GET /api/languages` | The 100 supported languages (code, name) |
+| `GET /api/admin/stats?days=1\|7\|30` | Admin analytics computed from the AWS archive (cached for a minute) |
+| `GET /api/departments/queue?department=`, `POST /api/deliveries/{id}/acknowledge`, `POST /api/requests/{id}/feedback`, `GET /api/requests/{id}/history` | Department inbox, acknowledgment, patient feedback, history |
+
+States: `Awaiting recording` → `Queued` → `Transcribing` → `Classifying` (the transcript is saved and shown to the patient) → `Ready to send` → `Delivered to queue`. A failure gives `Retry required`. On restart, interrupted transcriptions become `Retry required`, with the recording kept; requests left in `Classifying` are routed again. Re-upload a retained recording with `ingest_audio.py`.
+
+Typed text is treated as English when it is plain ASCII (the bedside keyboard is QWERTY); otherwise it is treated as the screen's language.
 
 ## Validation
 
-Run `python3 -m unittest discover -s hospital-dashboard -p 'test_*.py'`. Automated workflow tests use a fake recognizer; real recognition must also be tested. Benchmark 5/10/20-second recordings on the actual Pi, tracking latency, RAM, temperature, silence, background noise and language-specific mistakes. Do not infer clinical accuracy from a successful transcription.
+`python -m unittest discover -s hospital-dashboard -p 'test_*.py'`. The tests use stand-ins for Whisper, NLLB and Laya; real models must be checked on the server. Measure end-to-end latency on the M5 with several bedside units speaking at once, and check routing on representative requests in every language you expect. Do not infer clinical accuracy from a working demo: the routing model's urgency head cannot express 8–10, and translation errors can hide clinical meaning.
 
-Only one backend can use a data directory at a time: a process lock rejects a second instance on Linux/macOS. Back up the existing database before migration. The schema adds a nullable error column; no existing transcript, recording, feedback or delivery is deleted.
-
-## Verified on development Mac
-
-The previous environment used Python 3.13.0a4, which cannot load the NumPy wheels used here. A separate stable Python 3.12 environment was created at patient-app/.venv-local; the older environment was preserved. On this Mac launch with `cd ~/Desktop/Bello-repo/patient-app` then `./.venv-local/bin/python run_local.py`. Use stable Python (not an alpha build) on the Pi.
-
-Local verification: faster-whisper 1.2.1, CTranslate2 4.8.2, NumPy 2.2.6 and PyAV 16.1.0. PyAV is constrained below 17 because a newer installed decoder removed an argument used by this faster-whisper release. A spoken blanket request transcribed correctly in approximately 0.47 seconds with 234 MiB peak process memory on this Mac. These are single-clip development measurements, not Pi benchmarks or accuracy validation. A temporary-database HTTP test verified recording -> queued job -> original transcript -> department delivery -> acknowledgment -> feedback with offline model mode enabled.
-
-Benchmark on the Pi: `patient-app/.venv-local/bin/python hospital-dashboard/benchmark_stt.py /path/to/request.wav`. Measure CPU temperature separately, for example with the Pi's system monitoring tools, and compare repeated runs after warm-up. Original-language and noisy/quiet speech accuracy still require representative recordings.
-
-### Live listening text
-The patient screen displays provisional local transcripts while recording. A cumulative WAV snapshot is offered every three seconds after speech starts. One background worker shares the cached model, gives completed recordings priority, and replaces pending snapshots rather than accumulating them. Partial text may change; only the final recording produces a saved, dispatchable transcript. Silence or failure in a partial does not fail the final upload. Temporary snapshots expire after 60 seconds and are held in memory (maximum four sessions). This is incremental transcription, not guaranteed per-word streaming; latency on a Raspberry Pi 4 must be measured on that device.
+Only one backend may use a data directory at a time; on Linux and macOS a process lock enforces this. The schema migration only adds columns; nothing existing is deleted. Back up `transcript-data/` before upgrading.

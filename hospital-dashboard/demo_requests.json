@@ -1,0 +1,12 @@
+[
+  {"room": "204 · A", "text": "My chest feels tight, and I'm a little lightheaded."},
+  {"room": "218 · B", "text": "I'm bleeding more than before. Could someone come?"},
+  {"room": "212 · A", "text": "The machine beside me keeps beeping. I'm not sure why."},
+  {"room": "206 · B", "text": "Could you help me to the bathroom? I feel unsteady."},
+  {"room": "221 · A", "text": "There's water on the floor by the bathroom."},
+  {"room": "215 · A", "text": "I'm hungry, but I don't know if I'm allowed to eat yet."},
+  {"room": "203 · B", "text": "Another blanket would be lovely, thank you."},
+  {"room": "207 · A", "text": "The television remote isn't working."},
+  {"room": "210 · B", "text": "我想要多一張被，好凍呀。", "language": "yue"},
+  {"room": "209 · A", "text": "Me duele mucho la cabeza desde esta mañana.", "language": "es"}
+]

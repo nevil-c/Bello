@@ -109,6 +109,18 @@ class AnalyticsTests(unittest.TestCase):
     def test_stale_snapshot_is_not_published(self):
         call('PUT',PUT,rid=4,body=snapshot(rid=4,version=20,state='Delivered to queue'));call('PUT',PUT,rid=4,body=snapshot(rid=4,version=10,state='Ready to send'))
         self.assertEqual(self.rows('requests/unit-4/000000000004.json')[0]['state'],'Delivered to queue')
+    def test_routing_call_and_resolution_columns(self):
+        body=snapshot(rid=8,created=1760000000.0,called=1760000030.0,resolved=1760000300.0,category='Toileting',urgency=6,urgency_confidence=0.42,
+            more_info_needed=False,transcript='我想去廁所',transcript_en='I want to go to the toilet',language='yue',ui_language='yue',review=None)
+        self.assertEqual(call('PUT',PUT,rid=8,body=body)[1]['status'],'stored')
+        row=self.rows('requests/unit-4/000000000008.json')[0]
+        self.assertEqual((row['category'],row['urgency'],row['urgency_confidence'],row['more_info_needed']),('Toileting',6,0.42,False))
+        self.assertEqual((row['minutes_to_call'],row['minutes_to_resolve'],row['resolved_at']),(0.5,5.0,'2025-10-09 08:58:20'))
+        self.assertEqual(row['created_at'],'2025-10-09 08:53:20');self.assertEqual(row['transcript_en'],'I want to go to the toilet')
+        self.assertEqual(call('GET',PUT,rid=8)[1]['resolved'],1760000300.0)
+    def test_routing_field_validation(self):
+        for extra in ({'urgency':0},{'urgency':11},{'urgency':5.5},{'urgency_confidence':2},{'more_info_needed':'no'},{'resolved':'later'},{'category':'x'*61}):
+            with self.subTest(extra=extra):self.assertEqual(call('PUT',PUT,rid=9,body=snapshot(rid=9,**extra))[0],400)
     def test_s3_failure_returns_error_so_pi_retries(self):
         class Down:
             def put_object(self,**k):raise RuntimeError('s3 down')

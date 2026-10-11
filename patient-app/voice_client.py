@@ -8,18 +8,26 @@ import queue
 import wave
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+from urllib.parse import urlencode
+
+# The patient screen's language (set from the accessibility menu). Sent with each request; the
+# server still detects the spoken language itself.
+UI_LANGUAGE='en'
 
 class Cancelled(Exception):
     pass
 
-def api(path, body=None, content_type='application/json'):
+def new_request(room,**fields):
+    return api('/api/requests',json.dumps({'room':room,'ui_language':UI_LANGUAGE,**fields}).encode())
+
+def api(path, body=None, content_type='application/json', timeout=150):
     token=os.environ.get('BELLO_API_TOKEN')
     if not token:
         raise RuntimeError('Configure BELLO_API_TOKEN before starting the patient app.')
     server=os.environ.get('BELLO_SERVER','http://127.0.0.1:8766').rstrip('/')
     request=Request(server+path,data=body,headers={'X-Bello-Token':token,'Content-Type':content_type})
     try:
-        with urlopen(request,timeout=150) as response:
+        with urlopen(request,timeout=timeout) as response:
             return json.load(response)
     except HTTPError as error:
         try: message=json.load(error).get('error','Upload failed')
@@ -28,7 +36,7 @@ def api(path, body=None, content_type='application/json'):
 
 def submit_audio(audio, room, cancel, request_id=None):
     if cancel.is_set(): raise Cancelled()
-    request={'request_id':request_id} if request_id is not None else api('/api/requests',json.dumps({'room':room}).encode())
+    request={'request_id':request_id} if request_id is not None else new_request(room)
     if cancel.is_set(): raise Cancelled()
     result=api('/api/requests/%s/audio'%request['request_id'],audio,'audio/wav')
     return wait_for_transcript(request['request_id'],cancel)
@@ -158,7 +166,7 @@ def capture_batch(room,cancel,on_words,on_processing,on_pause=None,on_level=None
         with lock:latest[0]=audio
     def previews():
         nonlocal request_id
-        try:request_id=api('/api/requests',json.dumps({'room':room}).encode())['request_id']
+        try:request_id=new_request(room)['request_id']
         except Exception as error:setup_error.append(error)
         finally:ready.set()
         if setup_error:return
@@ -185,7 +193,7 @@ def capture_batch(room,cancel,on_words,on_processing,on_pause=None,on_level=None
 
 
 def submit_text(text, room):
-    return api('/api/requests',json.dumps({'room':room,'text':text}).encode())
+    return new_request(room,text=text)
 
 def submit_feedback(request_id, rating, resolution_answer, comment=''):
     return api(f'/api/requests/{request_id}/feedback',json.dumps({
@@ -193,7 +201,21 @@ def submit_feedback(request_id, rating, resolution_answer, comment=''):
 
 
 def submit_empty(room):
-    return api('/api/requests',json.dumps({'room':room,'confirmed_empty':True}).encode())
+    return new_request(room,confirmed_empty=True)
+
+
+def resolve_room(room):
+    """Staff at the bedside: mark every open request for this bed as done."""
+    return api('/api/rooms/resolve',json.dumps({'room':room}).encode())
+
+
+def open_requests(room):
+    return api('/api/rooms/open?'+urlencode({'room':room}),timeout=10)['open']
+
+
+def ui_strings(language):
+    """Translated screen strings from the server; the first translation of a language can take a while."""
+    return api(f'/api/i18n/{language}',timeout=300)['strings']
 
 
 def capture_and_submit(room,cancel,on_words,on_processing,on_pause=None,on_level=None):
@@ -204,7 +226,7 @@ def capture_and_submit(room,cancel,on_words,on_processing,on_pause=None,on_level
     frames=queue.Queue(maxsize=100)
     done=threading.Event();ready=threading.Event();errors=[];request_id=[None]
     def setup():
-        try:request_id[0]=api('/api/requests',json.dumps({'room':room}).encode())['request_id']
+        try:request_id[0]=new_request(room)['request_id']
         except Exception as error:errors.append(error)
         finally:ready.set()
     threading.Thread(target=setup,daemon=True).start()

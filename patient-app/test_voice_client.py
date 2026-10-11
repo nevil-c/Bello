@@ -50,4 +50,13 @@ class Tests(unittest.TestCase):
   with patch.object(client,'api',return_value={}) as api:
    client.submit_text('Blanket please','412 B');self.assertEqual(api.call_args.args[0],'/api/requests')
    client.submit_feedback(18,4,'yes');self.assertEqual(api.call_args.args[0],'/api/requests/18/feedback')
+ def test_requests_carry_screen_language(self):
+  with patch.object(client,'api',return_value={}) as api,patch.object(client,'UI_LANGUAGE','yue'):
+   client.submit_text('Blanket please','412 B')
+  import json
+  self.assertEqual(json.loads(api.call_args.args[1]),{'room':'412 B','ui_language':'yue','text':'Blanket please'})
+ def test_staff_resolve_and_open_routes(self):
+  with patch.object(client,'api',return_value={'open':2}) as api:
+   client.resolve_room('412 · B');self.assertEqual(api.call_args.args[0],'/api/rooms/resolve')
+   self.assertEqual(client.open_requests('412 · B'),2);self.assertEqual(api.call_args.args[0],'/api/rooms/open?room=412+%C2%B7+B')
 if __name__=='__main__':unittest.main()
