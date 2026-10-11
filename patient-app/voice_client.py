@@ -160,12 +160,17 @@ def microphone_settings(sd):
     device=os.environ.get('BELLO_INPUT_DEVICE')
     if device is not None and device.isdigit():device=int(device)
     try:
-        sd.check_input_settings(device=device,samplerate=16000,channels=1,dtype='int16')
-        return device,16000
-    except sd.PortAudioError:
-        rate=int(sd.query_devices(device,'input')['default_samplerate'])
-        sd.check_input_settings(device=device,samplerate=rate,channels=1,dtype='int16')
-        return device,rate
+        try:
+            sd.check_input_settings(device=device,samplerate=16000,channels=1,dtype='int16')
+            return device,16000
+        except sd.PortAudioError:
+            rate=int(sd.query_devices(device,'input')['default_samplerate'])
+            sd.check_input_settings(device=device,samplerate=rate,channels=1,dtype='int16')
+            return device,rate
+    except (sd.PortAudioError,ValueError) as error:
+        # PortAudio's own text ("Error querying device -1") says nothing a patient can act on, and
+        # the screen only recognises a microphone problem by its wording.
+        raise RuntimeError(f'No microphone input device is available ({error}).') from None
 
 class MicrophonePCM:
     """Stateful, filtered conversion to exact 100 ms recognition blocks."""
