@@ -12,6 +12,7 @@ import sqlite3
 import time
 import threading
 from local_stt import load_model, transcribe
+import aws_sync
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit, parse_qs
 
@@ -223,6 +224,11 @@ def main():
     print(f'Bello: http://127.0.0.1:{args.port}/ | Department inbox: /departments',flush=True)
     print('Private API token: '+TOKEN,flush=True)
     stop=threading.Event();thread=threading.Thread(target=worker,args=(stop,),daemon=True);thread.start()
+    cloud=aws_sync.config()
+    if cloud:
+        with db() as c:aws_sync.ensure_schema(c)
+        threading.Thread(target=aws_sync.worker,args=(stop,db,cloud),daemon=True).start()
+        print('Cloud archive: on, site '+cloud['site'],flush=True)
     ThreadingHTTPServer.allow_reuse_address=True
     with ThreadingHTTPServer(('127.0.0.1',args.port),Handler) as server:
         try:server.serve_forever()

@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Bello long-term archive for patient requests (API Gateway, Lambda, DynamoDB).
+
+Parameters:
+  RetentionDays:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    Description: Delete records this many days after their last sync. 0 keeps them until you delete them.
+  StageName:
+    Type: String
+    Default: prod
+
+Resources:
+  ArchiveKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Encrypts the Bello request archive
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AccountAdministration
+            Effect: Allow
+            Principal:
+              AWS: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:root
+            Action: kms:*
+            Resource: '*'
+
+  RequestsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      DeletionProtectionEnabled: true
+      AttributeDefinitions:
+        - {AttributeName: pk, AttributeType: S}
+        - {AttributeName: sk, AttributeType: S}
+      KeySchema:
+        - {AttributeName: pk, KeyType: HASH}
+        - {AttributeName: sk, KeyType: RANGE}
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !GetAtt ArchiveKey.Arn
+      TimeToLiveSpecification:
+        AttributeName: expires_at
+        Enabled: true
+
+  AnalyticsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !GetAtt ArchiveKey.Arn
+      LifecycleConfiguration:
+        Rules:
+          - Id: abort-partial-uploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: expire-query-results
+            Status: Enabled
+            Prefix: athena-results/
+            ExpirationInDays: 30
+
+  AnalyticsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AnalyticsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: RequireTls
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt AnalyticsBucket.Arn
+              - !Sub ${AnalyticsBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+
+  AnalyticsDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: bello_archive
+        Description: Bello patient request tables for Athena and Tableau
+
+  RequestsGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref AnalyticsDatabase
+      TableInput:
+        Name: requests
+        TableType: EXTERNAL_TABLE
+        Parameters:
+          classification: json
+        StorageDescriptor:
+          Location: !Sub s3://${AnalyticsBucket}/requests/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
+          Columns:
+          - {Name: site_id, Type: string}
+          - {Name: request_id, Type: bigint}
+          - {Name: room, Type: string}
+          - {Name: recommended_department, Type: string}
+          - {Name: delivered_department, Type: string}
+          - {Name: language, Type: string}
+          - {Name: state, Type: string}
+          - {Name: transcript, Type: string}
+          - {Name: created_at, Type: timestamp}
+          - {Name: delivered_at, Type: timestamp}
+          - {Name: acknowledged_at, Type: timestamp}
+          - {Name: minutes_to_deliver, Type: double}
+          - {Name: minutes_to_acknowledge, Type: double}
+          - {Name: rating, Type: int}
+          - {Name: resolution_answer, Type: string}
+          - {Name: feedback_comment, Type: string}
+          - {Name: version, Type: double}
+          - {Name: synced_at, Type: timestamp}
+
+  EventsGlueTable:
+    Type: AWS::Glue::Table
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseName: !Ref AnalyticsDatabase
+      TableInput:
+        Name: events
+        TableType: EXTERNAL_TABLE
+        Parameters:
+          classification: json
+        StorageDescriptor:
+          Location: !Sub s3://${AnalyticsBucket}/events/
+          InputFormat: org.apache.hadoop.mapred.TextInputFormat
+          OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+          SerdeInfo:
+            SerializationLibrary: org.openx.data.jsonserde.JsonSerDe
+          Columns:
+          - {Name: site_id, Type: string}
+          - {Name: request_id, Type: bigint}
+          - {Name: event, Type: string}
+          - {Name: event_at, Type: timestamp}
+
+  AnalyticsWorkGroup:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: bello-archive
+      State: ENABLED
+      WorkGroupConfiguration:
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: true
+        BytesScannedCutoffPerQuery: 1073741824
+        ResultConfiguration:
+          OutputLocation: !Sub s3://${AnalyticsBucket}/athena-results/
+          EncryptionConfiguration:
+            EncryptionOption: SSE_KMS
+            KmsKey: !GetAtt ArchiveKey.Arn
+
+  AnalystReadPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Read-only SQL access to the Bello archive through Athena (attach to the user or role Tableau signs in with)
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: [athena:StartQueryExecution, athena:StopQueryExecution, athena:GetQueryExecution, athena:GetQueryResults, athena:GetWorkGroup]
+            Resource: !Sub arn:${AWS::Partition}:athena:${AWS::Region}:${AWS::AccountId}:workgroup/${AnalyticsWorkGroup}
+          - Effect: Allow
+            Action: [athena:ListWorkGroups, athena:ListDataCatalogs, athena:ListDatabases, athena:GetDataCatalog, athena:GetDatabase, athena:GetTableMetadata, athena:ListTableMetadata]
+            Resource: '*'
+          - Effect: Allow
+            Action: [glue:GetDatabase, glue:GetDatabases, glue:GetTable, glue:GetTables, glue:GetPartition, glue:GetPartitions]
+            Resource:
+              - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:catalog
+              - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:database/bello_archive
+              - !Sub arn:${AWS::Partition}:glue:${AWS::Region}:${AWS::AccountId}:table/bello_archive/*
+          - Effect: Allow
+            Action: [s3:GetBucketLocation, s3:ListBucket]
+            Resource: !GetAtt AnalyticsBucket.Arn
+          - Effect: Allow
+            Action: s3:GetObject
+            Resource:
+              - !Sub ${AnalyticsBucket.Arn}/requests/*
+              - !Sub ${AnalyticsBucket.Arn}/events/*
+          - Effect: Allow
+            Action: [s3:GetObject, s3:PutObject, s3:AbortMultipartUpload]
+            Resource: !Sub ${AnalyticsBucket.Arn}/athena-results/*
+          - Effect: Allow
+            Action: [kms:Decrypt, kms:GenerateDataKey, kms:DescribeKey]
+            Resource: !GetAtt ArchiveKey.Arn
+
+  ArchiveApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      Auth:
+        ApiKeyRequired: true
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          UsagePlanName: bello-archive
+          Throttle:
+            RateLimit: 10
+            BurstLimit: 20
+
+  ArchiveFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.handler
+      Runtime: python3.12
+      Architectures: [arm64]
+      Timeout: 10
+      MemorySize: 256
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RequestsTable
+          RETENTION_DAYS: !Ref RetentionDays
+          ANALYTICS_BUCKET: !Ref AnalyticsBucket
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: [dynamodb:PutItem, dynamodb:GetItem, dynamodb:Query]
+              Resource: !GetAtt RequestsTable.Arn
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource:
+                - !Sub ${AnalyticsBucket.Arn}/requests/*
+                - !Sub ${AnalyticsBucket.Arn}/events/*
+            - Effect: Allow
+              Action: [kms:Encrypt, kms:Decrypt, kms:GenerateDataKey, kms:DescribeKey]
+              Resource: !GetAtt ArchiveKey.Arn
+      Events:
+        Put:
+          Type: Api
+          Properties: {RestApiId: !Ref ArchiveApi, Path: '/sites/{site}/requests/{id}', Method: PUT}
+        Get:
+          Type: Api
+          Properties: {RestApiId: !Ref ArchiveApi, Path: '/sites/{site}/requests/{id}', Method: GET}
+        List:
+          Type: Api
+          Properties: {RestApiId: !Ref ArchiveApi, Path: '/sites/{site}/requests', Method: GET}
+
+Outputs:
+  ApiUrl:
+    Description: Set as BELLO_CLOUD_URL on the Pi
+    Value: !Sub https://${ArchiveApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
+  ApiKeyId:
+    Description: Fetch the key value with the aws apigateway get-api-key command in the README
+    Value: !Ref ArchiveApiApiKey
+  TableName:
+    Value: !Ref RequestsTable
+  AnalyticsBucketName:
+    Value: !Ref AnalyticsBucket
+  AthenaWorkGroup:
+    Description: Choose this workgroup and database bello_archive in Tableau's Amazon Athena connector
+    Value: !Ref AnalyticsWorkGroup
+  AnalystReadPolicyArn:
+    Description: Attach to the IAM user or role that Tableau signs in with
+    Value: !Ref AnalystReadPolicy
