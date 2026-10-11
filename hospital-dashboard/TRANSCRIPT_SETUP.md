@@ -49,3 +49,6 @@ Department transfer here means a REAL persistent insertion into this app's depar
 Run tests: python3 test_backend.py
 
 Reference: https://elevenlabs.io/docs/api-reference/speech-to-text/convert
+
+## Patient feedback API
+POST /api/requests/{id}/feedback with X-Bello-Token and JSON: {"rating":5,"resolution_answer":"yes","comment":"Thank you"}. rating is an integer 1–5; resolution_answer is yes, partly, or no; comment is optional and at most 2000 characters. One response per request. The future patient UI should offer this at the end of service. The current backend has no completion gate, patient-specific identity, or invitation tracking; add those for real deployment. Never put the shared backend token in an untrusted patient client: use a request-specific authenticated integration.

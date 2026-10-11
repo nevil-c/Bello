@@ -33,6 +33,7 @@ def initialize():
     with db() as c:
         c.executescript('''CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,room TEXT,recommended TEXT,sample_text TEXT,transcript TEXT,language TEXT,state TEXT DEFAULT 'Awaiting recording',audio TEXT);
 CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,request_id INTEGER UNIQUE,department TEXT,transcript TEXT,room TEXT,language TEXT,status TEXT,created REAL);
+CREATE TABLE IF NOT EXISTS feedback(request_id INTEGER PRIMARY KEY,rating INTEGER NOT NULL,resolution_answer TEXT NOT NULL,comment TEXT,created REAL);
 CREATE TABLE IF NOT EXISTS history(id INTEGER PRIMARY KEY,request_id INTEGER,event TEXT,created REAL);''')
         for rid,text,room in re.findall(r"\{id:(\d+),request:'(.*?)',urgency:\d+,room:'(.*?)'",(ROOT/'dist/index.html').read_text()):
             team={6:TEAMS[1],8:TEAMS[1],9:TEAMS[3],10:TEAMS[2]}.get(int(rid),TEAMS[0])
@@ -88,6 +89,21 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:return self.send(400,{'error':'Invalid body length'})
         if not 0<=length<=10*1024*1024:return self.send(413,{'error':'Maximum recording size is 10 MB'})
         body=self.rfile.read(length);path=urlsplit(self.path).path
+        feedback=re.fullmatch(r'/api/requests/(\d+)/feedback',path)
+        if feedback:
+            rid=int(feedback[1])
+            try:payload=json.loads(body)
+            except ValueError:return self.send(400,{'error':'JSON object required'})
+            if not isinstance(payload,dict):return self.send(400,{'error':'JSON object required'})
+            rating=payload.get('rating');answer=payload.get('resolution_answer');comment=payload.get('comment','')
+            if type(rating) is not int or rating not in range(1,6) or answer not in ('yes','partly','no') or not isinstance(comment,str) or len(comment)>2000:
+                return self.send(400,{'error':'rating must be 1–5, resolution_answer yes/partly/no, comment at most 2000 characters'})
+            with db() as c:
+                if not c.execute('SELECT 1 FROM requests WHERE id=?',(rid,)).fetchone():return self.send(404,{'error':'Unknown request'})
+                try:c.execute('INSERT INTO feedback VALUES(?,?,?,?,?)',(rid,rating,answer,comment.strip(),time.time()))
+                except sqlite3.IntegrityError:return self.send(409,{'error':'Feedback already submitted for this request'})
+                event(c,rid,'Patient satisfaction feedback received')
+            return self.send(201,{'request_id':rid,'message':'Thank you for your feedback'})
         match=re.fullmatch(r'/api/requests/(\d+)/(audio|dispatch)',path)
         ack=re.fullmatch(r'/api/deliveries/([a-f0-9]{32})/acknowledge',path)
         if ack:
