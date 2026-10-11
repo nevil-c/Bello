@@ -32,12 +32,19 @@ def settings():
     return os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'], None
 
 
+LEAD_IN = 1   # seconds of silence before the voice: the person who just answered is still lifting the phone
+HANGUP = 2    # seconds of silence after the last word: the document then ends and Twilio hangs up
+
+
 def twiml(request_id, room, department):
-    """What the department hears. One-way and self-terminating: no <Gather> and no <Redirect>, so there
-    is nothing to reply to and Twilio hangs up when the document ends. Escaped, because
+    """What the department hears: a beat of silence, the greeting, the request, then a closing pause.
+    One-way and self-terminating — no <Gather> and no <Redirect> — so there is nothing to reply to, and
+    the closing <Pause> is the hang-up: Twilio ends the call when the document runs out. Escaped, because
     'Housekeeping & Facilities' is a department name and a bare & is not XML — Twilio would refuse
     the whole call."""
-    return ('<Response><Say>Bello: request {rid}, room {room}, {team}. Goodbye.</Say></Response>').format(
+    return ('<Response><Pause length="{lead}"/><Say>Hi. Bello: request {rid}, room {room}, {team}.'
+            '</Say><Pause length="{hangup}"/></Response>').format(
+        lead=LEAD_IN, hangup=HANGUP,
         rid=escape(str(request_id)), room=escape(str(room or 'unassigned')), team=escape(department))
 
 
@@ -77,9 +84,10 @@ if __name__ == '__main__':
     # Self-check: the XML escaping, the request shape, and that an unset-up Twilio fails loudly
     # instead of dialling.
     said = twiml(8, '203 B', 'Housekeeping & Facilities')
-    assert '&amp;' in said and said.startswith('<Response><Say>'), said
-    assert '<Say>Bello: request 8, room 203 B, Housekeeping &amp; Facilities. Goodbye.</Say>' in said, said
-    assert '<Gather' not in said and '<Redirect' not in said, said   # one-way: nothing to reply to
+    # Verbatim, so the lead pause, the greeting, the escaping and the closing pause are all pinned at once.
+    assert said == ('<Response><Pause length="1"/><Say>Hi. Bello: request 8, room 203 B, '
+                    'Housekeeping &amp; Facilities.</Say><Pause length="2"/></Response>'), said
+    assert '<Gather' not in said and '<Redirect' not in said and '<Hangup' not in said, said   # one-way, self-terminating
     assert twiml(9, None, 'Food Services').count('unassigned') == 1
     os.environ['TWILIO_FROM'] = '+19084568235'
     sent = build('+17325327539', said, 'ACsid', 'secret')
