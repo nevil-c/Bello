@@ -1,9 +1,9 @@
 """Care Queue: the unit clerk dashboard.
 
 A Python/Tkinter version of the original clerk page: the same header, worklist columns, badges and
-patient dialog, now fed live from the Bello server with the routing model's suggestions. One click on
-"Send + call" delivers the request to the department inbox and places the department call (a
-placeholder until the automated call is connected).
+patient dialog, now fed live from the Bello server with the routing model's suggestions. The model's
+department is only a suggestion: the clerk reviews the row and places the call with one click, and
+nursing is never dialled (the clerk is already talking to the nurses), so a nursing row offers Send.
 
   BELLO_SERVER=http://<server>:8766 python clerk.py
 """
@@ -117,12 +117,18 @@ class Row:
         self.room.pack(anchor='w')
         ui.button(call, 'Speak with patient', lambda: app.open_detail(self.id, call=True), f, 'call').pack(anchor='w')
         self.team = ttk.Combobox(delivery, state='readonly', width=29, font=f(9))
-        self.team.bind('<<ComboboxSelected>>', lambda e: app.chosen.__setitem__(self.id, ui.TEAMS[self.team.current()]))
+        self.team.bind('<<ComboboxSelected>>', lambda e: self.selected())
         self.send = ui.button(delivery, 'Send + call', lambda: app.dispatch(self.id, self.send), f, 'dispatch')
         self.sent = tk.Label(delivery, font=f(9), fg=ui.INK_2, justify='left', anchor='w')
         self.when = tk.Label(when, font=f(9), fg='#5d7086', justify='left', anchor='w')
         self.when.pack(anchor='w')
         self.recommended = object()
+
+    def selected(self):
+        """The clerk changed the team: remember it and say what the button will now do."""
+        team = ui.TEAMS[self.team.current()]
+        self.app.chosen[self.id] = team
+        self.send.configure(text=ui.call_action(team))
 
     def place(self, index):
         row = 2 * index + 2   # rows 0 and 1 are the heading and its rule
@@ -164,6 +170,7 @@ class Row:
             self.team.configure(values=[t + (' (recommended)' if t == r['recommended'] else '') for t in ui.TEAMS])
         team = self.app.chosen.get(self.id) or r['delivered_department'] or r['recommended'] or ui.TEAMS[0]
         self.team.current(ui.TEAMS.index(team))
+        self.send.configure(text=ui.call_action(team))
         for widget in (self.team, self.send, self.sent):
             widget.pack_forget()
         if sendable(r):
@@ -241,7 +248,7 @@ class Detail(tk.Toplevel):
         actions = tk.Frame(c, bg=ui.SURFACE)
         actions.pack(anchor='w', pady=(10, 0))
         self.team = ttk.Combobox(actions, state='readonly', values=ui.TEAMS, width=34, font=f(10))
-        self.team.bind('<<ComboboxSelected>>', lambda e: app.chosen.__setitem__(self.id, self.team.get()))
+        self.team.bind('<<ComboboxSelected>>', lambda e: self.team_chosen())
         self.team.pack(side='left')
         self.send = ui.button(actions, 'Send + call', lambda: app.dispatch(self.id, self.send, self.message), f, 'call')
         self.send.pack(side='left', padx=10)
@@ -255,6 +262,11 @@ class Detail(tk.Toplevel):
         self.update_request(app.find(rid))
         if call:
             self.call_preview()
+
+    def team_chosen(self):
+        """The clerk picked a team: what the button does follows the team."""
+        self.app.chosen[self.id] = self.team.get()
+        self.send.configure(text=ui.call_action(self.team.get()))
 
     def h3(self, parent, text):
         tk.Label(parent, text=text, font=self.app.f(10, True), fg='#304f70', bg=ui.SURFACE).pack(anchor='w', pady=(20, 6))
@@ -307,7 +319,7 @@ class Clerk:
         self.root, self.client = root, client
         self.f = f = ui.setup(root, 'Patient requests · Care Queue', '1560x900')
         root.minsize(1400, 640)
-        self.status = ui.header(root, f, 'Care Queue', 'Request worklist')
+        self.status = ui.header(root, f, 'Care Queue', 'Connecting…')
         self.bg = ui.Background(root)
         self.names = ui.language_names(client) if client else {'en': 'English'}
         self.requests, self.rows, self.chosen = [], {}, {}
@@ -348,8 +360,6 @@ class Clerk:
         footer = tk.Frame(panel, bg=ui.TOOLBAR, padx=16, pady=11)
         footer.pack(side='bottom', fill='x')
         tk.Frame(panel, bg='#cbd7e2', height=1).pack(side='bottom', fill='x')
-        self.summary = tk.Label(footer, font=f(9), fg='#64788d', bg=ui.TOOLBAR)
-        self.summary.pack(side='left')
         tk.Label(footer, text='Click a column heading to sort', font=f(9), fg='#64788d', bg=ui.TOOLBAR).pack(side='right')
 
         scroll = ui.ScrollFrame(panel, bg=ui.SURFACE)
@@ -387,7 +397,7 @@ class Clerk:
                 self.requests = value
                 self.render()
             else:
-                self.status.configure(text='Request worklist · ' + value)
+                self.status.configure(text=value)
         self.root.after(150, self.drain)
 
     def tick(self):
@@ -423,7 +433,6 @@ class Clerk:
             self.empty.pack(fill='x')
         open_count = sum(1 for r in self.requests if visible(r) and not r['resolved'])
         self.count.configure(text=f'{open_count} open requests')
-        self.summary.configure(text=f'{len(rows)} requests shown')
         for key, (label, heading) in self.headings.items():
             arrow = ('↓' if self.direction < 0 else '↑') if key == self.sort else '↕'
             label.configure(text=f'{heading}  {arrow}')

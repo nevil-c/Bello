@@ -15,6 +15,13 @@ from bello_api import ApiError, Client, Unauthorized
 
 HERE = Path(__file__).resolve().parent
 TEAMS = ['Primary Nurse', 'Housekeeping & Facilities', 'Food Services', 'Unit Clerk / IT Maintenance']
+# Nursing requests reach the nurse without a phone call; keep in step with the same set in
+# hospital-dashboard/backend.py, which is what actually decides whether a call is placed.
+NO_CALL = {'Primary Nurse'}
+
+def call_action(team):
+    """What one click does for this department: sending to nursing never places a call."""
+    return 'Send' if team in NO_CALL else 'Send + call'
 
 # The original Care Queue palette.
 PAGE = '#e5ebf2'           # page background
@@ -80,8 +87,8 @@ def header(root, f, title, pill):
                     highlightthickness=1, highlightbackground='#6c86a1')
     mark.pack(side='left', pady=12)
     tk.Label(inner, text=title, bg=HEAD, fg='white', font=f(13, True)).pack(side='left', padx=10)
-    status = tk.Label(inner, text=pill, bg='#33557a', fg=HEAD_INK, font=f(9), padx=10, pady=4,
-                      highlightthickness=1, highlightbackground='#55718f')
+    # Bare status text: the bordered chip read as a broken copy of the toolbar's own label.
+    status = tk.Label(inner, text=pill, bg=HEAD, fg='#a8c0d8', font=f(9))
     status.pack(side='right')
     tk.Frame(root, bg=HEAD_EDGE, height=3).pack(fill='x')
     return status

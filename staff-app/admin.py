@@ -104,7 +104,7 @@ class Admin:
     def __init__(self, root, client, refresh=True):
         self.root, self.client = root, client
         self.f = f = ui.setup(root, 'Bello Admin Analytics', '1280x900')
-        self.status = ui.header(root, f, 'Bello Admin', 'Hospital administration')
+        self.status = ui.header(root, f, 'Bello Admin', 'Loading…')
         self.bg = ui.Background(root)
         self.tooltip = ui.Tooltip(root, f)
         self.names = ui.language_names(client) if client else {'en': 'English'}

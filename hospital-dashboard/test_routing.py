@@ -70,7 +70,8 @@ class RoutingTests(unittest.TestCase):
 
  def test_send_and_call(self):
   rid=self.spoken('我想要多一張被','yue')
-  with patch.object(translation,'to_english',return_value='I want another blanket'),patch.object(decision,'classify',return_value=ROUTED):b.process_enrich()
+  # Routed to nursing so the automatic call does not fire: this test is the clerk's manual send.
+  with patch.object(translation,'to_english',return_value='I want another blanket'),patch.object(decision,'classify',return_value=dict(ROUTED,department='Primary Nurse')):b.process_enrich()
   result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
   self.assertEqual(result[0],201);self.assertTrue(result[1]['called']);self.assertEqual(result[1]['phone'],'2200')
   self.assertIsNotNone(self.row(rid)['called'])
@@ -79,6 +80,22 @@ class RoutingTests(unittest.TestCase):
    events=[e[0] for e in c.execute('SELECT event FROM history WHERE request_id=?',(rid,))]
   self.assertTrue(any(e.startswith('Call placed to Housekeeping & Facilities (ext 2200') for e in events))
   self.assertEqual(self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Primary Nurse','call':'yes'}).encode())[0],400)
+
+ def test_no_call_without_the_clerk_and_never_for_nursing(self):
+  # Routing suggests a department; nothing is delivered or dialled until the clerk acts.
+  rid=self.spoken()
+  with patch.object(decision,'classify',return_value=ROUTED):b.process_enrich()
+  r=self.row(rid)
+  self.assertEqual((r['state'],r['recommended']),('Ready to send','Housekeeping & Facilities'))
+  self.assertIsNone(r['called'])
+  with b.db() as c:self.assertIsNone(c.execute('SELECT 1 FROM deliveries WHERE request_id=?',(rid,)).fetchone())
+  # The clerk's click places the call for an out-of-department team.
+  result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
+  self.assertEqual(result[0],201);self.assertTrue(result[1]['called']);self.assertEqual(result[1]['phone'],'2200')
+  # Nursing is never dialled, even when a client asks for a call.
+  nurse=self.spoken('I need help getting to the bathroom')
+  result=self.post(f'/api/requests/{nurse}/dispatch',json.dumps({'department':'Primary Nurse','call':True}).encode())
+  self.assertEqual(result[0],201);self.assertFalse(result[1]['called']);self.assertIsNone(self.row(nurse)['called'])
 
  def test_staff_done_resolves_every_open_request_for_the_bed(self):
   first,second=self.spoken(),self.spoken()

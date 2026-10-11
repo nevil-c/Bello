@@ -4,7 +4,7 @@ Desktop apps for hospital staff. They get all their data from the Bello LAN serv
 
 | App | Who | What |
 |---|---|---|
-| `clerk.py` | Unit clerk | **Care Queue**: the request worklist, live. Each row shows the request in English (with the original if it was translated), the routing model's department and urgency, the room, and **Send + call**: one click sends the request to the department inbox and places the department call (the call is a placeholder for now). Click a request for the patient dialog: the full text, model details, room audio preview and history |
+| `clerk.py` | Unit clerk | **Care Queue**: the request worklist, live. Each row shows the request in English (with the original if it was translated), the routing model's suggested department and urgency, and the room, with **Send + call** for the clerk to send it to that department's inbox and call them (the call is a placeholder for now). Nothing is sent or dialled on its own: the suggestion is prepared, the clerk places it. Nursing is never dialled — the clerk is already talking to the nurses — so a nursing row offers **Send** alone. Click a request for the patient dialog: the full text, model details, room audio preview and history |
 | `inbox.py` | Departments | **Shared department inbox**: the requests sent to one department, in English, with Acknowledge |
 | `admin.py` | Hospital admin | **Admin analytics** from the AWS archive: the most common issues, response time by department and by issue, languages, busiest hours, requests per day, common words and the slowest responses |
 

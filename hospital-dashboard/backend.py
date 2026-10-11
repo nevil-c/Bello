@@ -38,6 +38,9 @@ VERSION=[0]
 STOP=threading.Event()
 
 TEAMS=['Primary Nurse','Housekeeping & Facilities','Food Services','Unit Clerk / IT Maintenance']
+# Nursing requests already reach the nurse, so they are never dialled; keep in step with the same
+# set in staff-app/common.py, which is what labels the clerk's button.
+NO_CALL={'Primary Nurse'}
 EMPTY_REQUEST='[Assistance requested without a message — patient confirmed submission]'
 DEMO_MARK='Demo request'
 COLUMNS={'error':'TEXT','transcript_en':'TEXT','ui_language':'TEXT','category':'TEXT','urgency':'INTEGER',
@@ -148,6 +151,8 @@ model_scores=?,review=?,state='Ready to send' WHERE id=? AND state='Classifying'
              result['more_info_needed'],result['model_scores'],result['review'],row['id']))
         if row['sample_text']!=DEMO_MARK:event(c,row['id'],note)
     changed()
+    # Routing only suggests a department. Nothing is delivered or dialled here: the clerk decides,
+    # and the call is theirs to place (and see NO_CALL for the department that is never dialled).
     return True
 
 def process_preview():
@@ -378,6 +383,9 @@ class Handler(BaseHTTPRequestHandler):
             except sqlite3.IntegrityError:return self.send(409,{'error':'Transcript already delivered; duplicate prevented'})
             c.execute("UPDATE requests SET state='Delivered to queue' WHERE id=?",(rid,));event(c,rid,'Saved transcript delivered to '+team)
             extension=phone_book().get(team,{}).get('phone')
+            # Only the clerk places a call, and only for the departments that are not nursing:
+            # nothing here is dialled automatically, however the request was routed.
+            call=call and team not in NO_CALL
             if call:
                 # Placeholder for the automated phone call; nothing is dialled yet.
                 c.execute('UPDATE requests SET called=? WHERE id=?',(now,rid))
