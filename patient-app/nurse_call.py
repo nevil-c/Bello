@@ -26,6 +26,12 @@ import tkinter.font as tkfont
 ROOM, BED = os.environ.get("BELLO_ROOM", "412"), os.environ.get("BELLO_BED", "B")
 DEMO_SPEECH = "My back is hurting and I need help sitting up."
 
+# Auto-fit calibration. A canvas below MIN_CANVAS px is a window still being mapped, so its size
+# is not worth scaling to; MIN_LAYOUT_SCALE stops a pathological window from shrinking the UI to
+# the point of being unreadable (it clips instead).
+MIN_CANVAS = 200
+MIN_LAYOUT_SCALE = 0.20
+
 THEMES = {
     "standard": dict(bg="#FFFFFF", ink="#14232B", muted="#5A6B73", line="#D3DDE1",
                      call="#D2402B", halo="#F7D5CF", on="#FFFFFF",
@@ -161,6 +167,7 @@ class App:
         self.dpi = root.winfo_fpixels("1i") / 96.0
         self.layout_scale = 1.0
         self.layout_key = None
+        self.fit_for = None      # canvas size the current layout_scale was fitted to
 
         self.screen = "home"     # home | listen | type
         self.state = "speaking"  # speaking | listening | sent | nothing   (listen screen)
@@ -255,9 +262,11 @@ class App:
     # ---- drawing
     def render(self):
         key = (self.screen, self.state, self.large, self.a11y_open)
-        if key != self.layout_key:
+        resized = key != self.layout_key
+        if resized:
             self.layout_key = key
             self.layout_scale = 1.0
+            self.fit_for = None
         self.gen += 1
         self.words_label = None
         self.pause_started = None
@@ -282,31 +291,39 @@ class App:
         inner=tk.Frame(canvas,bg=t['bg'])
         window=canvas.create_window(0,0,window=inner,anchor='n')
         generation=self.gen
-        fit_pending=[False]
         def fit():
-            fit_pending[0]=False
+            # Scale to the space the window actually has, and only to that: content that merely
+            # grew (a longer partial transcript) must never rescale and rebuild the whole screen.
+            # Keyed on the WINDOW size, not the canvas: shrinking the layout also shrinks the
+            # px()-scaled header, which changes the canvas under us and re-triggers this forever.
             if generation!=self.gen or not canvas.winfo_exists():return
-            available_w=max(1,canvas.winfo_width()-8)
-            available_h=max(1,canvas.winfo_height()-8)
-            required_w=max(1,inner.winfo_reqwidth())
-            required_h=max(1,inner.winfo_reqheight())
-            ratio=min(available_w/required_w,available_h/required_h)
-            if ratio<.98 and self.layout_scale>.20:
-                self.layout_scale=max(.20,self.layout_scale*ratio*.96)
+            window=(self.root.winfo_width(),self.root.winfo_height())
+            if min(window)<=MIN_CANVAS or window==self.fit_for:return
+            available=(canvas.winfo_width(),canvas.winfo_height())
+            if min(available)<=MIN_CANVAS:return
+            required_w=max(1,inner.winfo_reqwidth())/self.layout_scale
+            required_h=max(1,inner.winfo_reqheight())/self.layout_scale
+            target=max(MIN_LAYOUT_SCALE,min(1.0,(available[0]-8)/required_w,(available[1]-8)/required_h))
+            self.fit_for=window
+            if abs(target-self.layout_scale)>.005:
+                self.layout_scale=target
                 self.render()
         def layout(event=None):
             if generation!=self.gen or not canvas.winfo_exists():return
             w,h=canvas.winfo_width(),canvas.winfo_height()
             needed=inner.winfo_reqheight()
             canvas.coords(window,w/2,max(0,(h-needed)/2))
-            if w>10 and h>10 and not fit_pending[0]:
-                fit_pending[0]=True
-                self.root.after_idle(fit)
+            if event is not None and event.widget is canvas and w>10 and h>10:
+                # Debounced: a resize fires <Configure> before the canvas has its new size, and
+                # measuring the old one leaves the layout fitted to the wrong space.
+                self.root.after(60,fit)
         canvas.bind('<Configure>',layout)
         inner.bind('<Configure>',layout)
         for event in ('<MouseWheel>','<Button-4>','<Button-5>'):
             self.root.unbind(event)
         getattr(self, "draw_" + self.screen)(inner)
+        if resized:
+            self.root.after_idle(fit)
 
         if self.a11y_open:
             self.draw_a11y()
@@ -372,9 +389,13 @@ class App:
             self.label(f, hint, 22, st == "listening",
                        color="listen" if st == "listening" else "muted").pack()
 
+        # Reserved box: a growing transcript used to reflow the page and push Cancel off screen.
+        # Height is a calibration knob -- four lines of the 28pt words font.
         box = tk.Frame(f, bg=t["soft"], padx=self.px(28), pady=self.px(20),
-                       highlightbackground=t["line"], highlightthickness=2)
+                       highlightbackground=t["line"], highlightthickness=2,
+                       width=self.px(706), height=self.px(200))
         box.pack(pady=(self.px(18), 0))
+        box.pack_propagate(False)
         text = "No words were detected." if st == "empty" else self.words or "Your words will show here"
         self.words_label = tk.Label(box, text=text, font=self.font(28, bool(self.words)),
                                     fg=t["ink"] if self.words else t["muted"], bg=t["soft"],
@@ -547,7 +568,8 @@ class App:
         self.flow += 1
         f = self.flow
         self.screen, self.state = "listen", "speaking"
-        self.render()
+        # begin_listen() draws this screen again one call later inside the same frame, so the
+        # "Please wait" paint was never visible -- it was a second full rebuild of the UI thread.
         self.begin_listen(f)
 
     def begin_listen(self, f):
