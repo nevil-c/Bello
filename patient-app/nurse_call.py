@@ -213,8 +213,8 @@ class App:
         root.bind("<space>", self.on_call_key)
         root.bind("<Return>", self.on_call_key)
 
-        # Says what the device this runs on actually reports; the UI is tuned against it.
-        print(f"UI: Tk {root.tk.call('info', 'patchlevel')}, "
+        # Says what the device this runs on actually reports, and which checkout is running.
+        print(f"UI: {os.path.abspath(__file__)} on Tk {root.tk.call('info', 'patchlevel')}, "
               f"session {'wayland' if os.environ.get('WAYLAND_DISPLAY') else os.environ.get('DISPLAY', 'none')}, "
               f"screen {root.winfo_screenwidth()}x{root.winfo_screenheight()}, "
               f"dpi {self.dpi:.2f}, scale {self.layout_scale:.3f}", flush=True)
