@@ -15,9 +15,9 @@ from bello_api import LiveRequests
 
 SHOWN_STATES = {'Queued', 'Transcribing', 'Retry required'}
 # (key, heading, sort key, minimum width)
-COLUMNS = [('request', 'PATIENT REQUEST', None, 300), ('department', 'RECOMMENDED DEPARTMENT', 'department', 180),
-           ('urgency', 'URGENCY', 'urgency', 110), ('room', 'ROOM', 'room', 70), ('call', 'ROOM CALL', None, 140),
-           ('delivery', 'TRANSCRIPT DELIVERY', None, 230), ('time', 'TIME', 'time', 110)]
+COLUMNS = [('request', 'PATIENT REQUEST', None, 270), ('department', 'SUGGESTED DEPARTMENT', 'department', 200),
+           ('urgency', 'URGENCY', 'urgency', 130), ('room', 'ROOM', 'room', 95), ('call', 'TALK TO PATIENT', None, 180),
+           ('delivery', 'SEND TO DEPARTMENT', None, 325), ('time', 'WAITING', 'time', 120)]
 WRAP = 330   # request text width before it wraps
 
 # ---- what a row says (no Tk here, so it can be tested)
@@ -54,7 +54,7 @@ def sendable(r):
 def delivery_text(r):
     lines = []
     if r['delivered_department']:
-        lines.append('Sent to ' + r['delivered_department'])
+        lines.append('✓ Sent to ' + r['delivered_department'])
     elif r['state'] == 'Classifying':
         lines.append('Routing…')
     if r['called']:
@@ -89,38 +89,73 @@ def matches(r, query):
 
 # ---- the window
 
+class ActionButton(tk.Frame):
+    """Consistent, high-contrast actions, including on macOS native Tk themes."""
+    def __init__(self, parent, text, command, f, primary=False):
+        self.command, self.enabled = command, True
+        self.fill = '#187347' if primary else '#e7eff8'
+        self.ink = '#ffffff' if primary else '#234f79'
+        self.hover = '#105b37' if primary else '#d6e5f5'
+        super().__init__(parent, bg='#14633d' if primary else '#9bb5ce', padx=1, pady=1)
+        self.label = tk.Label(self, text=text, font=f(13, True), bg=self.fill, fg=self.ink,
+                              width=17, padx=4, pady=10, cursor='hand2', takefocus=True,
+                              highlightthickness=2, highlightbackground=self.fill)
+        self.label.pack(fill='both', expand=True)
+        self.label.bind('<Button-1>', self.invoke)
+        self.label.bind('<Return>', self.invoke)
+        self.label.bind('<space>', self.invoke)
+        self.label.bind('<Enter>', lambda e: self.label.configure(bg=self.hover if self.enabled else self.fill))
+        self.label.bind('<Leave>', lambda e: self.label.configure(bg=self.fill))
+        self.label.bind('<FocusIn>', lambda e: self.label.configure(highlightbackground='#234f79'))
+        self.label.bind('<FocusOut>', lambda e: self.label.configure(highlightbackground=self.fill))
+
+    def invoke(self, event=None):
+        if self.enabled:
+            self.command()
+
+    def configure(self, cnf=None, **kw):
+        if 'state' in kw:
+            self.enabled = kw.pop('state') != 'disabled'
+            self.label.configure(fg=self.ink if self.enabled else '#d2e1d9', cursor='hand2' if self.enabled else '')
+        if 'text' in kw:
+            self.label.configure(text=kw.pop('text'))
+        return super().configure(cnf, **kw) if cnf or kw else None
+
+
 class Row:
     """One worklist row: a set of cells on the shared table grid, updated in place."""
     def __init__(self, app, r):
         self.app, self.id, self.r = app, r['id'], r
         t, f = app.table, app.f
         self.edge = tk.Frame(t, width=3)
-        self.cells = [tk.Frame(t, padx=14, pady=14) for _ in COLUMNS]
+        self.cells = [tk.Frame(t, width=width, padx=14, pady=16) for _, _, _, width in COLUMNS]
         self.line = tk.Frame(t, height=1, bg=ui.ROW_LINE)
         request, department, urgency, room, call, delivery, when = self.cells
-        self.text = tk.Label(request, font=f(10), fg=ui.LINK, wraplength=WRAP, justify='left', anchor='w', cursor='hand2')
+        self.text = tk.Label(request, font=f(15), fg=ui.LINK, wraplength=WRAP, justify='left', anchor='w', cursor='hand2')
         self.text.bind('<Button-1>', lambda e: app.open_detail(self.id))
         self.text.pack(anchor='w', fill='x')
-        self.original = tk.Label(request, font=f(9), fg=ui.MUTED, wraplength=WRAP, justify='left', anchor='w')
+        self.original = tk.Label(request, font=f(12), fg=ui.MUTED, wraplength=WRAP, justify='left', anchor='w')
         self.flags = [ui.pill(request, '', f), ui.pill(request, '', f)]
         # Wrap to the width the column actually gets, which shrinks with the window.
         request.bind('<Configure>', lambda e: [w.configure(wraplength=max(120, e.width - 30)) for w in [self.text, self.original] + self.flags])
-        self.department = tk.Label(department, font=f(10), fg=ui.INK_2, wraplength=175, justify='left', anchor='w')
+        self.department = tk.Label(department, font=f(13), fg=ui.INK_2, wraplength=180, justify='left', anchor='w')
         self.department.pack(anchor='w')
         self.category = tk.Label(department, font=f(8), fg=ui.MUTED, wraplength=175, justify='left', anchor='w')
-        self.category.pack(anchor='w')
-        self.badge = tk.Label(urgency, font=f(8, True), padx=8, pady=3)
+        # Category is available in the patient details.
+        self.badge = tk.Label(urgency, font=f(12, True), padx=8, pady=3)
         self.badge.pack(anchor='w')
         self.confidence = tk.Label(urgency, font=f(8), fg=ui.MUTED)
-        self.confidence.pack(anchor='w', pady=(3, 0))
-        self.room = tk.Label(room, font=f(10, True), fg=ui.INK)
+        # Model confidence is available in the patient details.
+        self.room = tk.Label(room, font=f(15, True), fg=ui.INK)
         self.room.pack(anchor='w')
-        ui.button(call, 'Speak with patient', lambda: app.open_detail(self.id, call=True), f, 'call').pack(anchor='w')
-        self.team = ttk.Combobox(delivery, state='readonly', width=29, font=f(9))
+        ActionButton(call, 'Speak with patient', lambda: app.open_detail(self.id, call=True), f).pack(anchor='w')
+        self.team = ttk.Combobox(delivery, state='readonly', width=1, font=f(14))
         self.team.bind('<<ComboboxSelected>>', lambda e: self.selected())
-        self.send = ui.button(delivery, 'Send + call', lambda: app.dispatch(self.id, self.send), f, 'dispatch')
-        self.sent = tk.Label(delivery, font=f(9), fg=ui.INK_2, justify='left', anchor='w')
-        self.when = tk.Label(when, font=f(9), fg='#5d7086', justify='left', anchor='w')
+        self.action_slot = tk.Frame(delivery, height=54)
+        self.action_slot.pack_propagate(False)
+        self.send = ActionButton(self.action_slot, 'Send + call', lambda: app.dispatch(self.id, self.send), f, primary=True)
+        self.sent = tk.Label(delivery, font=f(12), wraplength=250, fg='#187347', justify='left', anchor='w')
+        self.when = tk.Label(when, font=f(12), fg='#5d7086', justify='left', anchor='w')
         self.when.pack(anchor='w')
         self.recommended = object()
 
@@ -129,6 +164,9 @@ class Row:
         team = ui.TEAMS[self.team.current()]
         self.app.chosen[self.id] = team
         self.send.configure(text=ui.call_action(team))
+        self.send.pack_forget()
+        if team not in ui.NO_CALL and sendable(self.r):
+            self.send.pack(anchor='w')
 
     def place(self, index):
         row = 2 * index + 2   # rows 0 and 1 are the heading and its rule
@@ -167,16 +205,19 @@ class Row:
         self.room.configure(text=r['room'])
         if r['recommended'] != self.recommended:
             self.recommended = r['recommended']
-            self.team.configure(values=[t + (' (recommended)' if t == r['recommended'] else '') for t in ui.TEAMS])
+            self.team.configure(values=ui.TEAMS)
         team = self.app.chosen.get(self.id) or r['delivered_department'] or r['recommended'] or ui.TEAMS[0]
         self.team.current(ui.TEAMS.index(team))
         self.send.configure(text=ui.call_action(team))
-        for widget in (self.team, self.send, self.sent):
+        self.action_slot.configure(bg=bg)
+        for widget in (self.team, self.action_slot, self.send, self.sent):
             widget.pack_forget()
         if sendable(r):
-            self.team.pack(anchor='w', pady=(0, 7))
+            self.team.pack(fill='x', pady=(0, 10))
             self.send.configure(state='normal')
-            self.send.pack(anchor='w')
+            self.action_slot.pack(fill='x')
+            if team not in ui.NO_CALL:
+                self.send.pack(anchor='w')
         status = delivery_text(r)
         if status:
             self.sent.configure(text=status)
@@ -187,6 +228,59 @@ class Row:
         for widget in [self.edge, self.line] + self.cells:
             widget.destroy()
 
+class PatientScrollFrame(tk.Frame):
+    """Pixel scrolling with bounded travel and window-local wheel handlers."""
+    def __init__(self, parent):
+        super().__init__(parent, bg=ui.SURFACE)
+        self.canvas = tk.Canvas(self, bg=ui.SURFACE, highlightthickness=0, yscrollincrement=1)
+        bar = ttk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
+        bar.pack(side='right', fill='y')
+        self.canvas.pack(side='left', fill='both', expand=True)
+        self.inner = tk.Frame(self.canvas, bg=ui.SURFACE)
+        self.window = self.canvas.create_window(0, 0, window=self.inner, anchor='nw')
+        self.canvas.configure(yscrollcommand=bar.set)
+        self.inner.bind('<Configure>', self.update_region)
+        self.canvas.bind('<Configure>', self.resize)
+        self.host = self.winfo_toplevel()
+        self.bindings = [(sequence, self.host.bind(sequence, self.wheel, add='+'))
+                         for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>')]
+        self.bind('<Destroy>', self.cleanup)
+
+    def resize(self, event):
+        self.canvas.itemconfigure(self.window, width=event.width)
+        self.update_region()
+
+    def update_region(self, event=None):
+        height = max(self.inner.winfo_reqheight(), self.canvas.winfo_height())
+        self.canvas.configure(scrollregion=(0, 0, self.canvas.winfo_width(), height))
+
+    def wheel(self, event):
+        widget = self.winfo_containing(event.x_root, event.y_root)
+        while widget is not None and widget is not self:
+            widget = widget.master
+        if widget is None:
+            return
+        number, delta = getattr(event, 'num', None), getattr(event, 'delta', 0)
+        if number in (4, 5):
+            pixels = -32 if number == 4 else 32
+        elif not delta:
+            return
+        elif self.tk.call('tk', 'windowingsystem') == 'aqua':
+            pixels = max(-40, min(40, -delta * 2))
+        else:
+            pixels = -delta / 120 * 32
+        height = max(self.inner.winfo_reqheight(), self.canvas.winfo_height())
+        maximum = max(0, height - self.canvas.winfo_height())
+        offset = min(maximum, max(0, self.canvas.canvasy(0) + pixels))
+        self.canvas.yview_moveto(offset / height if height else 0)
+        return 'break'
+
+    def cleanup(self, event):
+        if event.widget is self:
+            for sequence, binding in self.bindings:
+                self.host.unbind(sequence, binding)
+
+
 class Detail(tk.Toplevel):
     """The patient dialog: request, routing, room audio, basic information, delivery and history."""
     def __init__(self, app, rid, call=False):
@@ -194,26 +288,27 @@ class Detail(tk.Toplevel):
         self.app, self.id, f = app, rid, app.f
         self.title('Patient request')
         self.configure(bg=ui.SURFACE)
-        self.geometry('640x780')
+        self.geometry('820x880')
+        self.minsize(700, 640)
         self.transient(app.root)
         top = tk.Frame(self, bg=ui.DIALOG_HEAD, padx=24, pady=18)
         top.pack(fill='x')
         tk.Frame(self, bg='#cbd7e2', height=1).pack(fill='x')
         heading = tk.Frame(top, bg=ui.DIALOG_HEAD)
         heading.pack(side='left')
-        tk.Label(heading, text='PATIENT CONTEXT', font=f(8, True), fg=ui.EYEBROW, bg=ui.DIALOG_HEAD).pack(anchor='w')
-        self.heading = tk.Label(heading, font=f(15, True), fg=ui.INK, bg=ui.DIALOG_HEAD)
+        tk.Label(heading, text='PATIENT REQUEST', font=f(11, True), fg=ui.EYEBROW, bg=ui.DIALOG_HEAD).pack(anchor='w')
+        self.heading = tk.Label(heading, font=f(20, True), fg=ui.INK, bg=ui.DIALOG_HEAD)
         self.heading.pack(anchor='w', pady=(4, 0))
-        tk.Button(top, text='✕', command=self.destroy, font=f(12), bg=ui.DIALOG_HEAD, relief='flat', bd=0, cursor='hand2').pack(side='right')
-        body = ui.ScrollFrame(self, bg=ui.SURFACE)
+        ActionButton(top, 'Close', self.destroy, f).pack(side='right')
+        body = PatientScrollFrame(self)
         body.pack(fill='both', expand=True)
         c = tk.Frame(body.inner, bg=ui.SURFACE, padx=24, pady=16)
         c.pack(fill='both', expand=True)
-        ui.pill(c, 'Patient information', f, bg='#edf2f7', fg='#60748a').pack(anchor='w')
-        self.h3(c, 'Patient request')
-        self.request = self.text(c, 11)
-        self.original = self.text(c, 10, fg=ui.MUTED)
-        self.routing = self.text(c, 9, fg='#667d95')
+
+        self.h3(c, 'What the patient needs')
+        self.request = self.text(c, 18)
+        self.original = self.text(c, 13, fg=ui.MUTED)
+        self.routing = self.text(c, 14, fg=ui.INK)
 
         box = tk.Frame(c, bg='#eef4fa', highlightthickness=1, highlightbackground='#c6d6e7', padx=16, pady=14)
         box.pack(fill='x', pady=(20, 0))
@@ -221,58 +316,73 @@ class Detail(tk.Toplevel):
         line.pack(fill='x')
         left = tk.Frame(line, bg='#eef4fa')
         left.pack(side='left')
-        tk.Label(left, text='Room audio', font=f(10, True), fg='#304f70', bg='#eef4fa').pack(anchor='w')
-        self.call_room = tk.Label(left, font=f(9), fg=ui.MUTED, bg='#eef4fa')
+        tk.Label(left, text='Talk to the patient', font=f(14, True), fg='#304f70', bg='#eef4fa').pack(anchor='w')
+        self.call_room = tk.Label(left, font=f(13), fg=ui.MUTED, bg='#eef4fa')
         self.call_room.pack(anchor='w')
-        ui.button(line, 'Speak with patient', self.call_preview, f, 'call').pack(side='right')
+        ActionButton(line, 'Speak with patient', self.call_preview, f).pack(side='right')
         self.preview = tk.Frame(box, bg='#eef4fa')
-        self.preview_text = tk.Label(self.preview, font=f(10), fg=ui.INK_2, bg='#eef4fa', wraplength=520, justify='left')
+        self.preview_text = tk.Label(self.preview, font=f(13), fg=ui.INK_2, bg='#eef4fa', wraplength=520, justify='left')
         self.preview_text.pack(anchor='w', pady=(10, 6))
-        tk.Button(self.preview, text='Close call preview', command=self.preview.pack_forget, font=f(9), bg='white', fg='#355675',
-                  relief='flat', highlightthickness=1, highlightbackground='#bbcbdc', padx=10, pady=4).pack(anchor='w')
-        self.disclaimer = tk.Label(box, text='Demo only · Room audio service is not connected.', font=f(8), fg='#657b92', bg='#eef4fa')
+        ActionButton(self.preview, 'Close preview', self.preview.pack_forget, f).pack(anchor='w')
+        self.disclaimer = tk.Label(box, text='Demo only · Room audio service is not connected.', font=f(12), fg=ui.MUTED, bg='#eef4fa')
         self.disclaimer.pack(anchor='w', pady=(8, 0))
 
-        self.h3(c, 'Basic information')
-        grid = tk.Frame(c, bg=ui.SURFACE)
-        grid.pack(fill='x')
-        self.facts = {}
-        for i, name in enumerate(('Spoken language', 'Screen language', 'Category', 'Urgency', 'Review note')):
-            tk.Label(grid, text=name, font=f(10), fg='#667b92', bg=ui.SURFACE).grid(row=i, column=0, sticky='nw', pady=4)
-            self.facts[name] = tk.Label(grid, font=f(10), fg=ui.INK, bg=ui.SURFACE, wraplength=400, justify='left')
-            self.facts[name].grid(row=i, column=1, sticky='nw', padx=(24, 0), pady=4)
-
-        self.h3(c, 'Transcript delivery')
-        tk.Label(c, text='Send the request to a shared department inbox and call the department. Any available team member can respond.',
-                 font=f(9), fg='#667d95', bg=ui.SURFACE, wraplength=580, justify='left').pack(anchor='w')
+        self.h3(c, 'Send to department')
+        tk.Label(c, text='Confirm the department, then send the request. Nursing requests are sent without a phone call.',
+                 font=f(13), fg=ui.INK_2, bg=ui.SURFACE, wraplength=740, justify='left').pack(anchor='w')
         actions = tk.Frame(c, bg=ui.SURFACE)
-        actions.pack(anchor='w', pady=(10, 0))
-        self.team = ttk.Combobox(actions, state='readonly', values=ui.TEAMS, width=34, font=f(10))
+        actions.pack(fill='x', pady=(12, 0))
+        self.team = ttk.Combobox(actions, state='readonly', values=ui.TEAMS, width=1, font=f(14))
         self.team.bind('<<ComboboxSelected>>', lambda e: self.team_chosen())
-        self.team.pack(side='left')
-        self.send = ui.button(actions, 'Send + call', lambda: app.dispatch(self.id, self.send, self.message), f, 'call')
-        self.send.pack(side='left', padx=10)
-        self.message = self.text(c, 9, fg=ui.INK_2)
-        self.note = tk.Label(c, font=f(9), fg='#6d7f92', bg=ui.SURFACE, wraplength=580, justify='left')
+        self.team.pack(side='left', fill='x', expand=True, ipady=5)
+        self.action_slot = tk.Frame(actions, width=190, height=56, bg=ui.SURFACE)
+        self.action_slot.pack(side='right', padx=(10, 0))
+        self.action_slot.pack_propagate(False)
+        self.send = ActionButton(self.action_slot, 'Send + call', lambda: app.dispatch(self.id, self.send, self.message), f, primary=True)
+        self.send.pack(anchor='e')
+        self.message = self.text(c, 13, fg='#187347')
+        self.note = tk.Label(c, font=f(12), fg=ui.MUTED, bg=ui.SURFACE, wraplength=740, justify='left')
         self.note.pack(anchor='w', pady=(14, 0))
 
-        self.h3(c, 'Department routing history')
-        self.history = self.text(c, 9, fg='#667d95')
+        self.h3(c, 'Request details')
+        grid = tk.Frame(c, bg=ui.SURFACE)
+        grid.pack(fill='x')
+        grid.columnconfigure(1, weight=1)
+        self.facts = {}
+        for i, name in enumerate(('Spoken language', 'Screen language', 'Category', 'Urgency', 'Review note')):
+            tk.Label(grid, text=name, font=f(13), fg='#667b92', bg=ui.SURFACE).grid(row=i, column=0, sticky='nw', pady=7)
+            self.facts[name] = tk.Label(grid, font=f(13), fg=ui.INK, bg=ui.SURFACE, wraplength=400, justify='left')
+            self.facts[name].grid(row=i, column=1, sticky='nw', padx=(24, 0), pady=7)
+
+        self.h3(c, 'Request history')
+        self.history = self.text(c, 12, fg=ui.INK_2)
+        c.bind('<Configure>', lambda e: self.resize_text(c, max(180, e.width - 48)))
         self.shown = None
         self.update_request(app.find(rid))
         if call:
             self.call_preview()
 
+    def resize_text(self, parent, width):
+        if getattr(self, '_text_width', None) == width:
+            return
+        self._text_width = width
+        for widget in parent.winfo_children():
+            if isinstance(widget, tk.Label):
+                widget.configure(wraplength=width)
+
     def team_chosen(self):
         """The clerk picked a team: what the button does follows the team."""
         self.app.chosen[self.id] = self.team.get()
         self.send.configure(text=ui.call_action(self.team.get()))
+        self.send.pack_forget()
+        if self.team.get() not in ui.NO_CALL and sendable(self.app.find(self.id)):
+            self.send.pack(anchor='e')
 
     def h3(self, parent, text):
-        tk.Label(parent, text=text, font=self.app.f(10, True), fg='#304f70', bg=ui.SURFACE).pack(anchor='w', pady=(20, 6))
+        tk.Label(parent, text=text, font=self.app.f(14, True), fg='#304f70', bg=ui.SURFACE).pack(anchor='w', pady=(24, 10))
 
     def text(self, parent, size, fg=ui.INK_2):
-        label = tk.Label(parent, font=self.app.f(size), fg=fg, bg=ui.SURFACE, wraplength=580, justify='left', anchor='w')
+        label = tk.Label(parent, font=self.app.f(size), fg=fg, bg=ui.SURFACE, wraplength=740, justify='left', anchor='w')
         label.pack(anchor='w', fill='x')
         return label
 
@@ -292,23 +402,30 @@ class Detail(tk.Toplevel):
         self.request.configure(text=request_text(r))
         self.original.configure(text=f"{names.get(r['language'], r['language'])} (original): {r['transcript']}\n"
                                      'Machine translation: it can be wrong, so check the original.' if translated(r) else '')
-        urgency = f"Urgency {r['urgency']}/10" if r['urgency'] is not None else 'Urgency not assessed'
-        self.routing.configure(text=f"{r['recommended'] or 'No suggestion'} · {urgency}")
+        urgency = f"{level(r['urgency'])[0]} · {r['urgency']}/10" if r['urgency'] is not None else 'Urgency not assessed'
+        self.routing.configure(text=f"{urgency}  •  Suggested: {r['recommended'] or 'No suggestion'}",
+                               fg=ui.BADGES[level(r['urgency'])[1]][1])
         label, _ = level(r['urgency'])
         self.facts['Spoken language'].configure(text=names.get(r['language'], r['language'] or 'Not detected'))
         self.facts['Screen language'].configure(text=names.get(r['ui_language'], r['ui_language'] or 'Not provided'))
         self.facts['Category'].configure(text=r['category'] or 'Not classified')
         self.facts['Urgency'].configure(text=f"{r['urgency']}/10 ({label}" + (f", {round(r['urgency_confidence'] * 100)}% confidence)" if r['urgency_confidence'] is not None else ')') if r['urgency'] is not None else 'Not assessed')
-        self.facts['Review note'].configure(text=r['review'] or 'None')
+        self.facts['Review note'].configure(text=r['review'] or 'No review needed')
         team = self.app.chosen.get(self.id) or r['delivered_department'] or r['recommended'] or ui.TEAMS[0]
         self.team.set(team)
         ready = sendable(r)
         self.team.configure(state='readonly' if ready else 'disabled')
-        self.send.configure(state='normal' if ready else 'disabled')
+        self.send.configure(text=ui.call_action(team), state='normal' if ready else 'disabled')
+        self.send.pack_forget()
+        if team not in ui.NO_CALL:
+            self.send.pack(anchor='e')
         status = delivery_text(r)
         self.message.configure(text=status)
         self.note.configure(text='Needs clerk review: ' + r['review'] if r['review'] else 'Review the request and selected team before sending.')
-        self.app.bg.run(lambda: self.app.client.get(f'/api/requests/{self.id}/history')['history'], self.show_history)
+        if self.app.client is not None:
+            self.app.bg.run(lambda: self.app.client.get(f'/api/requests/{self.id}/history')['history'], self.show_history)
+        else:
+            self.show_history([])
 
     def show_history(self, history):
         if self.winfo_exists():
@@ -318,8 +435,9 @@ class Clerk:
     def __init__(self, root, client, live=True):
         self.root, self.client = root, client
         self.f = f = ui.setup(root, 'Patient requests · Care Queue', '1560x900')
-        root.minsize(1400, 640)
-        self.status = ui.header(root, f, 'Care Queue', 'Connecting…')
+        root.minsize(1500, 640)
+        root.option_add('*TCombobox*Listbox.font', f(14))
+        self.status = ui.header(root, f, 'Unit Clerk Dashboard', 'Connecting…', centered=True)
         self.bg = ui.Background(root)
         self.names = ui.language_names(client) if client else {'en': 'English'}
         self.requests, self.rows, self.chosen = [], {}, {}
@@ -331,9 +449,7 @@ class Clerk:
         top.pack(fill='x', pady=(0, 18))
         titles = tk.Frame(top, bg=ui.PAGE)
         titles.pack(side='left')
-        tk.Label(titles, text='UNIT CLERK DASHBOARD', font=f(8, True), fg=ui.EYEBROW, bg=ui.PAGE).pack(anchor='w')
-        tk.Label(titles, text='Patient requests', font=f(20), fg=ui.INK, bg=ui.PAGE).pack(anchor='w', pady=(4, 2))
-        tk.Label(titles, text='Inpatient call bell · Request worklist', font=f(10), fg=ui.MUTED, bg=ui.PAGE).pack(anchor='w')
+        tk.Label(titles, text='Patient requests', font=f(28), fg=ui.INK, bg=ui.PAGE).pack(anchor='w', pady=(4, 2))
         self.count = tk.Label(top, font=f(10, True), fg=ui.COUNT_INK, bg=ui.COUNT_BG, padx=14, pady=8,
                               highlightthickness=1, highlightbackground=ui.COUNT_EDGE)
         self.count.pack(side='right')
@@ -348,12 +464,12 @@ class Clerk:
         inbox.bind('<Button-1>', lambda e: ui.open_app(client, 'inbox.py'))
         self.search = tk.StringVar()
         self.search.trace_add('write', lambda *a: self.render())
-        entry = tk.Entry(toolbar, textvariable=self.search, width=40, font=f(10), relief='flat', highlightthickness=1,
+        entry = tk.Entry(toolbar, textvariable=self.search, width=26, font=f(12), relief='flat', highlightthickness=1,
                          highlightbackground='#b9c9d9', highlightcolor='#356b9c', fg=ui.INK)
         entry.pack(side='right', ipady=6)
-        tk.Label(toolbar, text='Search request, room or department', font=f(9), fg=ui.MUTED, bg=ui.TOOLBAR).pack(side='right', padx=8)
+        tk.Label(toolbar, text='Search', font=f(12), fg=ui.MUTED, bg=ui.TOOLBAR).pack(side='right', padx=8)
         self.show_resolved = tk.BooleanVar(value=False)
-        tk.Checkbutton(toolbar, text='Show resolved', variable=self.show_resolved, command=self.render, font=f(9), fg=ui.INK_2,
+        tk.Checkbutton(toolbar, text='Show resolved', variable=self.show_resolved, command=self.render, font=f(12), fg=ui.INK_2,
                        bg=ui.TOOLBAR, activebackground=ui.TOOLBAR, selectcolor='white').pack(side='right', padx=16)
         tk.Frame(panel, bg='#c8d4e0', height=1).pack(fill='x')
 
@@ -370,9 +486,11 @@ class Clerk:
         self.headings = {}
         for column, (key, heading, sort, width) in enumerate(COLUMNS, start=1):
             self.table.columnconfigure(column, minsize=width, weight=1 if key == 'request' else 0)
+            # Prevent changing row content from resizing the shared columns.
+
             cell = tk.Frame(self.table, bg=ui.TH_BG, padx=14, pady=11)
             cell.grid(row=0, column=column, sticky='nsew')
-            label = tk.Label(cell, text=heading, font=f(8, True), fg=ui.TH_INK, bg=ui.TH_BG)
+            label = tk.Label(cell, text=heading, font=f(11, True), fg=ui.TH_INK, bg=ui.TH_BG)
             label.pack(anchor='w')
             if sort:
                 label.configure(cursor='hand2')

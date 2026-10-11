@@ -14,6 +14,7 @@ import urllib.request
 
 CACHE_SECONDS=60
 MAX_PAGES=200
+LONG_WAIT_MINUTES=15
 _cache={'at':0.0,'key':None,'records':None}
 _lock=threading.Lock()
 STOPWORDS=set('''a an and are am as at be been but by can could do does for from get got have having he her
@@ -94,8 +95,14 @@ def stats(all_records,days,site,now=None):
     daily={}
     for r in rows:daily.setdefault(time.strftime('%Y-%m-%d',time.localtime(created_at(r))),[]).append(r)
     slowest=sorted(((minutes(r),r) for r in rows if minutes(r) is not None),key=lambda x:-x[0])[:5]
+    waiting=sorted(((max(0, (now-created_at(r))/60), r) for r in rows if r.get('resolved') is None),key=lambda x:-x[0])
     return {
         'site':site,'days':days,'generated':now,
+        'attention':{'threshold_minutes':LONG_WAIT_MINUTES,
+            'open':len(waiting),'long_waits':sum(m>=LONG_WAIT_MINUTES for m,r in waiting),
+            'longest_minutes':round(waiting[0][0],1) if waiting else None,
+            'requests':[{'request_id':r['request_id'],'room':r.get('room'),
+                'department':department(r),'minutes':round(m,1)} for m,r in waiting[:5]]},
         'totals':{'requests':len(rows),'resolved':len(times),'open':len(rows)-len(times),
             'median_minutes':percentile(times,.5),'p90_minutes':percentile(times,.9),
             'avg_rating':round(sum(ratings)/len(ratings),2) if ratings else None,'ratings':len(ratings)},

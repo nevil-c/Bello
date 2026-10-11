@@ -76,14 +76,18 @@ def setup(root, title, geometry='1440x860'):
     s.configure('Vertical.TScrollbar', background=TOOLBAR, troughcolor=PAGE, bordercolor=PAGE, arrowcolor=MUTED)
     return f
 
-def header(root, f, title, pill):
+def header(root, f, title, pill, centered=False):
     """The dark Care Queue bar: the title, and the status text on the right (returned)."""
     bar = tk.Frame(root, bg=HEAD)
     bar.pack(fill='x')
     inner = tk.Frame(bar, bg=HEAD, height=55)
     inner.pack(fill='x', padx=28)
     inner.pack_propagate(False)
-    tk.Label(inner, text=title, bg=HEAD, fg='white', font=f(13, True)).pack(side='left')
+    title_label = tk.Label(inner, text=title, bg=HEAD, fg='white', font=f(20 if centered else 13, True))
+    if centered:
+        title_label.place(relx=.5, rely=.5, anchor='center')
+    else:
+        title_label.pack(side='left')
     # Bare status text: the bordered chip read as a broken copy of the toolbar's own label.
     status = tk.Label(inner, text=pill, bg=HEAD, fg='#a8c0d8', font=f(9))
     status.pack(side='right')

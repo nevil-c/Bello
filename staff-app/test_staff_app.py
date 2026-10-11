@@ -79,7 +79,7 @@ class RowLogicTests(unittest.TestCase):
     def test_badges_and_status(self):
         self.assertEqual([clerk.level(u)[0] for u in (None, 1, 3, 5, 7)], ['Not assessed', 'Low', 'Routine', 'High', 'Urgent'])
         r = request(delivered_department='Food Services', called=time.time(), resolved=time.time())
-        self.assertEqual(clerk.delivery_text(r).splitlines()[0], 'Sent to Food Services')
+        self.assertEqual(clerk.delivery_text(r).splitlines()[0], '✓ Sent to Food Services')
         self.assertIn('Resolved in', clerk.time_text(r));self.assertFalse(clerk.sendable(r))
         self.assertTrue(clerk.translated(request()));self.assertFalse(clerk.translated(request(language='en', transcript_en='I want another blanket')))
         self.assertFalse(clerk.visible(request(transcript=None, state='Awaiting recording')))
@@ -107,7 +107,13 @@ class WindowTests(unittest.TestCase):
         app.requests = [request(), request(id=2, urgency=7, transcript='Chest pain', transcript_en='Chest pain', language='en', review='Check')]
         app.render(); self.pump()
         self.assertEqual(list(app.rows), [2, 1]);first = app.rows[1]
-        self.assertEqual(first.team.get(), 'Housekeeping & Facilities (recommended)')
+        self.assertEqual(first.team.get(), 'Housekeeping & Facilities')
+        first.team.current(0); first.selected(); self.pump()
+        self.assertFalse(first.send.winfo_ismapped())
+        self.assertTrue(first.team.winfo_ismapped())
+        first.team.current(2); first.selected(); self.pump()
+        self.assertTrue(first.send.winfo_ismapped())
+        self.assertEqual(first.send.label.cget('text'), 'Send + call')
         app.requests = [request(state='Delivered to queue', delivered_department='Housekeeping & Facilities')]; app.render(); self.pump()
         self.assertIs(app.rows[1], first);self.assertNotIn(2, app.rows);self.assertFalse(first.send.winfo_ismapped())
         posted = []
@@ -122,11 +128,57 @@ class WindowTests(unittest.TestCase):
         self.assertIn('Cantonese (original)', app.detail.original.cget('text'))
         self.assertTrue(app.detail.preview.winfo_ismapped())
 
+    def test_patient_scroll_is_bounded_and_keeps_layout(self):
+        from types import SimpleNamespace
+        app = clerk.Clerk(self.root, None, live=False)
+        app.requests = [request()]
+        app.open_detail(1)
+        self.pump()
+        body = next(w for w in app.detail.winfo_children() if isinstance(w, clerk.PatientScrollFrame))
+        canvas = body.canvas
+        width = body.inner.winfo_width()
+        original_wrap = app.detail.request.cget('wraplength')
+        before = app.detail.bind('<MouseWheel>')
+        with patch.object(body, 'winfo_containing', return_value=body.inner):
+            for _ in range(100):
+                body.wheel(SimpleNamespace(x_root=0, y_root=0, num=5, delta=0))
+            self.pump()
+            self.assertLessEqual(canvas.canvasy(0), max(0, body.inner.winfo_reqheight() - canvas.winfo_height()) + 1)
+            for _ in range(100):
+                body.wheel(SimpleNamespace(x_root=0, y_root=0, num=4, delta=0))
+            self.pump()
+        self.assertEqual(canvas.canvasy(0), 0)
+        self.assertEqual(body.inner.winfo_width(), width)
+        self.assertEqual(app.detail.request.cget('wraplength'), original_wrap)
+        body.destroy()
+        self.assertTrue(before)
+        self.assertFalse(app.detail.bind('<MouseWheel>'))
+
     def test_inbox_cards(self):
         app = inbox.Inbox(self.root, None, refresh=False)
         app.show(app.team.get(), [{'id': 'a' * 32, 'room': '412 · B', 'transcript': 'Blanket please', 'language': 'en', 'status': 'Delivered to queue', 'created': time.time()}])
         self.pump()
         self.assertEqual(len(app.cards.winfo_children()), 1);self.assertEqual(app.team.get(), 'Housekeeping & Facilities')
+
+    def test_admin_range_changes_ignore_old_responses(self):
+        app = admin.Admin(self.root, None, refresh=False)
+        pending = []
+        class Client:
+            def get(self, path, days):
+                return {'days': days}
+        app.client = Client()
+        app.bg.run = lambda work, done, failed: pending.append((work, done, failed))
+        shown = []
+        app.show = lambda stats: shown.append(stats['days'])
+        app.choose(1)
+        app.choose(30)
+        app.choose(7)
+        pending[2][1](pending[2][0]())
+        pending[0][1](pending[0][0]())
+        pending[1][2]('Old connection error')
+        self.assertEqual(shown, [7])
+        self.assertNotIn('Old connection error', app.message.cget('text'))
+        self.assertEqual(app.days, 7)
 
     def test_admin_draws_every_card(self):
         app = admin.Admin(self.root, None, refresh=False)
@@ -139,9 +191,52 @@ class WindowTests(unittest.TestCase):
                  'slowest': [{'request_id': 5, 'room': '412 · B', 'category': 'Toileting', 'department': 'Primary Nurse', 'minutes': 10.0}]}
         app.names = {'yue': 'Cantonese'}; app.show(stats); self.pump()
         self.assertEqual(app.tile_labels[1][1].cget('text'), '7 min');self.assertEqual(app.tile_labels[4][1].cget('text'), '50%')
+        self.assertEqual(app.tile_labels[3][1].cget('text'), '5/5')
+        self.assertTrue(all(not labels[2].winfo_ismapped() for labels in app.tile_labels))
         self.assertTrue(app.issues.find_all());self.assertTrue(app.daily.find_all());self.assertEqual(len(app.slowest.get_children()), 1)
+        self.assertIsInstance(app.languages, admin.Bars)
+        self.assertIsInstance(app.by_department, admin.Bars)
+        self.assertIsInstance(app.by_issue, admin.Bars)
+        self.assertIsInstance(app.daily, admin.Columns)
+        chart = app.issues
+        shape = next(iter(chart.details))
+        chart.addtag_withtag('current', shape)
+        before_height = chart.master.winfo_height()
+        chart.motion(None); self.pump()
+        self.assertIn('Toileting', app.popup.key[1])
+        app.popup.reveal(chart, app.popup.key[1]); self.pump()
+        popup_position = app.popup.window.geometry()
+        chart.motion(None); self.pump()
+        self.assertEqual(app.popup.window.geometry(), popup_position)
+        self.assertIn('Toileting', app.popup.label.cget('text'))
+        self.assertEqual(chart.master.winfo_height(), before_height)
+        chart.clear_detail()
+        self.assertIsNone(app.popup.key)
+        self.assertFalse(app.popup.window.winfo_ismapped())
+        chart.redraw()
+        self.assertIsNone(app.popup.key)
+        self.root.geometry('1280x700+100+100'); self.pump()
+        app.scroll.canvas.yview_moveto(.4); self.pump()
+        offset = app.scroll.canvas.canvasy(0)
+        chart_height = app.issues.winfo_height()
+        app.show(stats); self.pump()
+        self.assertAlmostEqual(app.scroll.canvas.canvasy(0), offset, delta=2)
+        self.assertEqual(app.issues.winfo_height(), chart_height)
+        chart_text = [app.issues.itemcget(item, 'text') for item in app.issues.find_all() if app.issues.type(item) == 'text']
+        self.assertTrue(any('requests' in text and '%' in text for text in chart_text))
+        import copy
+        empty = copy.deepcopy(stats)
+        empty['totals'].update(requests=0, resolved=0, open=0)
+        for field in ('categories', 'departments', 'languages', 'daily', 'common_terms', 'slowest'):
+            empty[field] = []
+        empty['hours'] = [0]*24
+        app.show(empty); self.pump()
+        self.assertIn('No requests', app.message.cget('text'))
+        self.assertTrue(app.grid.winfo_ismapped())
+        self.assertEqual(app.issues.winfo_height(), chart_height)
+        app.show(stats); self.pump()
         app.error('Cloud archive unreachable (URLError).'); self.pump()
-        self.assertFalse(app.grid.winfo_ismapped());self.assertIn('unreachable', app.message.cget('text'))
+        self.assertTrue(app.grid.winfo_ismapped());self.assertIn('unreachable', app.message.cget('text'));self.assertIn('last successful', app.message.cget('text'))
         self.assertEqual(admin.duration(90), '1.5 h');self.assertEqual(admin.hour_label(13), '1p')
 
 if __name__ == '__main__':
