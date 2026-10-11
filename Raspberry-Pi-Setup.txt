@@ -1,0 +1,66 @@
+BELLO PATIENT UI — RASPBERRY PI SETUP
+
+Requirements:
+- Raspberry Pi 4B with 8 GB RAM
+- 64-bit Raspberry Pi OS
+- Python 3.10 or newer
+- USB microphone
+- Internet for package installation and the first model download
+- Desktop session for the patient UI window
+
+Open Terminal and go to your Bello-repo folder first.
+Replace /path/to/Bello-repo below with its actual location:
+
+cd /path/to/Bello-repo
+
+1. Install microphone and window support:
+
+sudo apt update
+sudo apt install -y python3-venv python3-tk libportaudio2 alsa-utils
+
+2. Create a Python environment on the Pi:
+
+python3 -m venv patient-app/.venv-local
+
+3. Install the Python packages:
+
+patient-app/.venv-local/bin/python -m pip install --upgrade pip
+patient-app/.venv-local/bin/python -m pip install -r patient-app/requirements.txt -r hospital-dashboard/requirements.txt
+patient-app/.venv-local/bin/python -m pip install "webrtcvad-wheels>=2.0.14,<3"
+
+4. Download the multilingual model once:
+
+patient-app/.venv-local/bin/python hospital-dashboard/prepare_model.py
+
+This download needs internet. Transcription then runs locally.
+
+5. Start the patient UI and backend together:
+
+patient-app/.venv-local/bin/python patient-app/run_local.py
+
+Keep Terminal open while using the app.
+Use run_local.py rather than nurse_call.py: the launcher automatically configures the matching Bello token and starts the backend.
+No ElevenLabs API key is needed.
+
+TO START AGAIN LATER
+
+cd /path/to/Bello-repo
+patient-app/.venv-local/bin/python patient-app/run_local.py
+
+USB MICROPHONE CHECKS
+
+lsusb
+arecord -l
+patient-app/.venv-local/bin/python -c "import sounddevice as sd; print(sd.query_devices()); print('Default input/output:', sd.default.device)"
+
+Record a five-second test. Replace 1,0 with the card and device numbers from arecord -l:
+
+arecord -D plughw:1,0 -f S16_LE -r 16000 -c 1 -d 5 /tmp/mic-test.wav
+aplay /tmp/mic-test.wav
+
+NOTES
+
+Create the Python environment on the Pi. Do not copy the Mac's .venv-local folder.
+The model files are downloaded separately and are not stored in GitHub.
+The latest UI and noise-suppression edits must also be copied or committed and pushed from the laptop before pulling them on the Pi.
+If a command fails, stop and share its error output before continuing.
