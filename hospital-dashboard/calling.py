@@ -32,7 +32,7 @@ def settings():
     return os.environ['TWILIO_ACCOUNT_SID'], os.environ['TWILIO_AUTH_TOKEN'], None
 
 
-LEAD_IN = 1   # seconds of silence before the voice: the person who just answered is still lifting the phone
+LEAD_IN = 3   # seconds of silence before the voice: long enough for whoever answered to say hello first
 HANGUP = 2    # seconds of silence after the last word: the document then ends and Twilio hangs up
 # The plain Twilio voices ignore SSML, so an excited greeting needs a voice that supports it. Any
 # Polly.* or Google.* name works here; the rest of the message is spoken in the same voice.
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     said = twiml(8, '203 B', 'Housekeeping & Facilities')
     # Verbatim, so the lead pause, the excited greeting, the Polly voice, the escaping and the closing
     # pause are all pinned at once.
-    assert said == ('<Response><Pause length="1"/><Say voice="Polly.Joanna">'
+    assert said == ('<Response><Pause length="3"/><Say voice="Polly.Joanna">'
                     '<prosody rate="fast" pitch="+25%">Bello!</prosody> Request 8, room 203 B, '
                     'Housekeeping &amp; Facilities.</Say><Pause length="2"/></Response>'), said
     assert '<Gather' not in said and '<Redirect' not in said and '<Hangup' not in said, said   # one-way, self-terminating
