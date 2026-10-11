@@ -77,16 +77,13 @@ def setup(root, title, geometry='1440x860'):
     return f
 
 def header(root, f, title, pill):
-    """The dark Care Queue bar: '+' mark, title, and a pill on the right (returned, for status text)."""
+    """The dark Care Queue bar: the title, and the status text on the right (returned)."""
     bar = tk.Frame(root, bg=HEAD)
     bar.pack(fill='x')
     inner = tk.Frame(bar, bg=HEAD, height=55)
     inner.pack(fill='x', padx=28)
     inner.pack_propagate(False)
-    mark = tk.Label(inner, text='+', bg='#3a5878', fg='white', font=f(15, True), padx=7,
-                    highlightthickness=1, highlightbackground='#6c86a1')
-    mark.pack(side='left', pady=12)
-    tk.Label(inner, text=title, bg=HEAD, fg='white', font=f(13, True)).pack(side='left', padx=10)
+    tk.Label(inner, text=title, bg=HEAD, fg='white', font=f(13, True)).pack(side='left')
     # Bare status text: the bordered chip read as a broken copy of the toolbar's own label.
     status = tk.Label(inner, text=pill, bg=HEAD, fg='#a8c0d8', font=f(9))
     status.pack(side='right')
