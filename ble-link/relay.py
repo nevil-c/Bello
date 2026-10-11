@@ -45,13 +45,13 @@ def open_apps():
         log('BELLO_NO_APPS set: not opening the staff apps.')
         return
     python = TK_PYTHON if os.path.exists(TK_PYTHON) else sys.executable
-    for name in ('clerk.py', 'inbox.py'):
+    for name in ('clerk.py', 'inbox.py', 'admin.py'):
         try:
             subprocess.Popen([python, os.path.join(ROOT, 'staff-app', name)], env=dict(os.environ, BELLO_SERVER=SERVER))
         except OSError as error:
             log(f'Could not open {name}: {error}')
             return
-    log(f'Opened the care queue and the department inbox ({python} → {SERVER})')
+    log(f'Opened the care queue, the department inbox and admin analytics ({python} → {SERVER})')
 
 async def serve_once():
     from bleak import BleakClient, BleakScanner
