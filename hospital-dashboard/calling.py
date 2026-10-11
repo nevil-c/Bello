@@ -37,7 +37,8 @@ HANGUP = 2    # seconds of silence after the last word: the document then ends a
 # The plain Twilio voices ignore SSML, so an excited greeting needs a voice that supports it. Any
 # Polly.* or Google.* name works here; the rest of the message is spoken in the same voice.
 VOICE = 'Polly.Joanna'
-GREETING = '<prosody rate="fast" pitch="+25%">Bello!</prosody>'
+GREETING = ('<prosody rate="fast" volume="loud">Bell</prosody>'
+            '<prosody rate="x-slow" volume="loud">oooo!</prosody>')
 
 
 def twiml(request_id, room, department):
@@ -91,7 +92,8 @@ if __name__ == '__main__':
     # Verbatim, so the lead pause, the excited greeting, the Polly voice, the escaping and the closing
     # pause are all pinned at once.
     assert said == ('<Response><Pause length="3"/><Say voice="Polly.Joanna">'
-                    '<prosody rate="fast" pitch="+25%">Bello!</prosody> Request 8, room 203 B, '
+                    '<prosody rate="fast" volume="loud">Bell</prosody>'
+                    '<prosody rate="x-slow" volume="loud">oooo!</prosody> Request 8, room 203 B, '
                     'Housekeeping &amp; Facilities.</Say><Pause length="2"/></Response>'), said
     assert '<Gather' not in said and '<Redirect' not in said and '<Hangup' not in said, said   # one-way, self-terminating
     assert twiml(9, None, 'Food Services').count('unassigned') == 1
