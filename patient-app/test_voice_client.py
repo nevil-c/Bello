@@ -22,6 +22,25 @@ class Tests(unittest.TestCase):
   sd.query_devices.return_value={'default_samplerate':44100,'max_output_channels':1}
   client.play_recording_ding(sd)
   self.assertEqual(sd.play.call_args.args[0].shape,(44100,))
+ def test_no_input_device_is_reported_as_a_microphone_problem(self):
+  # A Pi with no microphone: PortAudio says only "Error querying device -1", which the patient screen
+  # did not recognise, so it told the patient their message could not be saved.
+  from unittest.mock import Mock
+  class PortAudioError(Exception):pass
+  sd=Mock(PortAudioError=PortAudioError)
+  sd.check_input_settings.side_effect=PortAudioError('Error querying device -1')
+  sd.query_devices.side_effect=PortAudioError('Error querying device -1')
+  with self.assertRaises(RuntimeError) as caught:client.microphone_settings(sd)
+  message=str(caught.exception).lower()
+  self.assertIn('microphone',message)   # nurse_call.on_error shows "microphone unavailable" for this word
+  self.assertIn('error querying device -1',message)
+ def test_microphone_settings_still_fall_back_to_the_native_rate(self):
+  from unittest.mock import Mock
+  class PortAudioError(Exception):pass
+  sd=Mock(PortAudioError=PortAudioError)
+  sd.check_input_settings.side_effect=[PortAudioError('16 kHz unsupported'),None]
+  sd.query_devices.return_value={'default_samplerate':44100.0}
+  self.assertEqual(client.microphone_settings(sd),(None,44100))
  def test_async_upload_polls_completed_transcript(self):
   results=[{'request_id':18},{'request_id':18,'state':'Queued'},
            {'request_id':18,'state':'Transcribing','transcript':None},
