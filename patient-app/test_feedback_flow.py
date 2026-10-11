@@ -16,7 +16,7 @@ class Tests(unittest.TestCase):
   self.app.voice.listen=lambda *a,**k:None
   self.app.start_call();self.app.on_done(self.app.flow,'Blanket please',7);self.pump(.1)
   self.app.open_feedback();self.pump(.1)
-  self.app.select_rating(4);self.app.select_resolution('yes');self.app.comment.set('  Kind nurse ')
+  self.app.select_rating(4);self.app.select_resolution('yes')
  def tearDown(self):self.root.destroy()
  def pump(self,seconds):
   end=time.monotonic()+seconds
@@ -35,7 +35,7 @@ class Tests(unittest.TestCase):
  def test_submit_sends_to_the_server_then_goes_home(self):
   with patch.object(nurse_call,'submit_feedback') as send:
    self.submit_button().invoke();self.settle()
-  send.assert_called_once_with(7,4,'yes','Kind nurse')
+  send.assert_called_once_with(7,4,'yes')
   self.assertEqual(self.app.screen,'home')
   self.assertEqual(self.app.staff_notice,nurse_call.tr('feedback_saved'))
   self.assertIn(7,self.app.feedback_done)

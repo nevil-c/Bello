@@ -148,7 +148,8 @@ class Row:
         # Model confidence is available in the patient details.
         self.room = tk.Label(room, font=f(15, True), fg=ui.INK)
         self.room.pack(anchor='w')
-        ActionButton(call, 'Speak with patient', lambda: app.open_detail(self.id, call=True), f).pack(anchor='w')
+        self.talk = ui.hold_to_speak(call, f)
+        self.talk.pack(anchor='w')
         self.team = ttk.Combobox(delivery, state='readonly', width=1, font=f(14))
         self.team.bind('<<ComboboxSelected>>', lambda e: self.selected())
         self.action_slot = tk.Frame(delivery, height=54)
@@ -283,9 +284,10 @@ class PatientScrollFrame(tk.Frame):
 
 class Detail(tk.Toplevel):
     """The patient dialog: request, routing, room audio, basic information, delivery and history."""
-    def __init__(self, app, rid, call=False):
+    def __init__(self, app, rid):
         super().__init__(app.root)
         self.app, self.id, f = app, rid, app.f
+        self.holding = False
         self.title('Patient request')
         self.configure(bg=ui.SURFACE)
         self.geometry('820x880')
@@ -319,13 +321,12 @@ class Detail(tk.Toplevel):
         tk.Label(left, text='Talk to the patient', font=f(14, True), fg='#304f70', bg='#eef4fa').pack(anchor='w')
         self.call_room = tk.Label(left, font=f(13), fg=ui.MUTED, bg='#eef4fa')
         self.call_room.pack(anchor='w')
-        ActionButton(line, 'Speak with patient', self.call_preview, f).pack(side='right')
+        self.talk = ui.hold_to_speak(line, f, self.call_state)
+        self.talk.pack(side='right')
         self.preview = tk.Frame(box, bg='#eef4fa')
         self.preview_text = tk.Label(self.preview, font=f(13), fg=ui.INK_2, bg='#eef4fa', wraplength=520, justify='left')
         self.preview_text.pack(anchor='w', pady=(10, 6))
         ActionButton(self.preview, 'Close preview', self.preview.pack_forget, f).pack(anchor='w')
-        self.disclaimer = tk.Label(box, text='Demo only · Room audio service is not connected.', font=f(12), fg=ui.MUTED, bg='#eef4fa')
-        self.disclaimer.pack(anchor='w', pady=(8, 0))
 
         self.h3(c, 'Send to department')
         tk.Label(c, text='Confirm the department, then send the request. Nursing requests are sent without a phone call.',
@@ -359,8 +360,7 @@ class Detail(tk.Toplevel):
         c.bind('<Configure>', lambda e: self.resize_text(c, max(180, e.width - 48)))
         self.shown = None
         self.update_request(app.find(rid))
-        if call:
-            self.call_preview()
+        self.call_preview()
 
     def resize_text(self, parent, width):
         if getattr(self, '_text_width', None) == width:
@@ -387,10 +387,31 @@ class Detail(tk.Toplevel):
         return label
 
     def call_preview(self):
-        r = self.app.find(self.id)
-        self.preview_text.configure(text=f"Call preview for room {r['room']}. No audio connection has been made. "
-                                         'Connect the room calling service to enable speaking with this patient.')
-        self.preview.pack(fill='x', before=self.disclaimer)
+        """What the room-audio box says before the clerk holds the talk button down."""
+        self.preview_text.configure(text=f"Room {self.app.find(self.id)['room']} · hold the button to talk to the patient.")
+        self.preview.pack(fill='x')
+
+    def call_state(self, live):
+        """The talk button went down or up: the box reads as a live call and is timed.
+
+        ponytail: the timer is all there is — nothing is recorded or played. Run the room calling
+        service from here when there is one."""
+        self.holding = live
+        if live:
+            self.held = time.time()
+            self.preview.pack(fill='x')
+            self.call_tick()
+        else:
+            self.preview_text.configure(text=f"Call ended · {int(time.time() - self.held)}s")
+
+    def call_tick(self):
+        # On the root window, not the dialog: a pending `after` on a destroyed Toplevel leaves a
+        # Tcl command behind, and the root then fails to destroy it.
+        if not self.holding or not self.winfo_exists():
+            return
+        room = (self.app.find(self.id) or {}).get('room', '')
+        self.preview_text.configure(text=f"Speaking with room {room} · {int(time.time() - self.held)}s")
+        self.app.root.after(1000, self.call_tick)
 
     def update_request(self, r):
         if r is None or r == self.shown:
@@ -557,10 +578,10 @@ class Clerk:
         if self.detail is not None and self.detail.winfo_exists():
             self.detail.update_request(self.find(self.detail.id))
 
-    def open_detail(self, rid, call=False):
+    def open_detail(self, rid):
         if self.detail is not None and self.detail.winfo_exists():
             self.detail.destroy()
-        self.detail = Detail(self, rid, call)
+        self.detail = Detail(self, rid)
 
     def dispatch(self, rid, button, message=None):
         r = self.find(rid)
@@ -568,8 +589,13 @@ class Clerk:
         button.configure(state='disabled')
         def done(result):
             self.chosen.pop(rid, None)
+            if result.get('call_error'):
+                messagebox.showwarning('Send + call', f"Sent to {result['department']}, but the call did not go out:\n\n{result['call_error']}", parent=self.root)
             if message is not None and message.winfo_exists():
-                phone = f"Call placed to ext {result['phone']} (placeholder)." if result.get('phone') else 'Call logged (placeholder).'
+                if result.get('called'):
+                    phone = f"Call placed to {result['phone']}." if result.get('phone') else 'Call placed.'
+                else:
+                    phone = 'No call placed.'
                 message.configure(text=f"Sent to {result['department']}. {phone}")
         def failed(error):
             if button.winfo_exists():

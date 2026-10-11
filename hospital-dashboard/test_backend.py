@@ -73,4 +73,26 @@ class Tests(unittest.TestCase):
   self.assertEqual(row['state'],'Retry required');self.assertIn('interrupted',row['error'])
  def test_invalid_audio(self):
   self.assertEqual(self.post('/api/requests/8/audio',b'not audio')[0],400)
+  def test_the_clerk_click_places_the_call_and_a_failure_is_reported(self):
+   with patch.object(b,'transcribe',return_value={'text':'Blanket please.','language':'eng'}):
+    self.upload();b.process_next()
+   with patch.object(b.calling,'place_call',return_value=(True,'Twilio call CA1 (queued)')) as dial:
+    code,result=self.post('/api/requests/8/dispatch',json.dumps({'department':'Food Services','call':True}).encode())
+   self.assertEqual(code,201);self.assertTrue(result['called']);self.assertIsNone(result['call_error'])
+   dial.assert_called_once();self.assertEqual(dial.call_args[0][0],b.phone_book()['Food Services']['phone'])
+   self.assertIn('room 203 B',dial.call_args[0][1])
+   with b.db() as c:row=c.execute('SELECT called FROM requests WHERE id=8').fetchone()
+   self.assertIsNotNone(row['called'])
+   other=self.post('/api/requests',json.dumps({'room':'412','text':'Water please'}).encode())[1]['request_id']
+   with patch.object(b.calling,'place_call',return_value=(False,'Twilio refused the call (401): Authenticate')):
+    code,result=self.post(f'/api/requests/{other}/dispatch',json.dumps({'department':'Food Services','call':True}).encode())
+   self.assertEqual(code,201);self.assertFalse(result['called']);self.assertIn('Authenticate',result['call_error'])
+   with b.db() as c:
+    self.assertIsNone(c.execute('SELECT called FROM requests WHERE id=?',(other,)).fetchone()['called'])
+    self.assertIn('Twilio refused',c.execute('SELECT event FROM history WHERE request_id=? ORDER BY id DESC LIMIT 1',(other,)).fetchone()['event'])
+  def test_nursing_is_never_dialled(self):
+   rid=self.post('/api/requests',json.dumps({'room':'412','text':'I need the nurse'}).encode())[1]['request_id']
+   with patch.object(b.calling,'place_call') as dial:
+    code,result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Primary Nurse','call':True}).encode())
+   self.assertEqual(code,201);self.assertFalse(result['called']);dial.assert_not_called()
 if __name__=='__main__':unittest.main()

@@ -2,7 +2,7 @@
 
 The bedside unit (Pi) sends requests; the relay on the server machine answers them. Messages are split
 into small chunks to fit BLE packets and carry a CRC32 so a damaged reassembly is dropped, not used.
-Demo build: the radio link is NOT encrypted or authenticated. Anyone in Bluetooth range running this
+The radio link is NOT encrypted or authenticated. Anyone in Bluetooth range running this
 protocol could read requests or send them. Add encryption before patient data goes over it.
 
 Delivery: the relay acknowledges a request as soon as it has all of it, and answers when the server

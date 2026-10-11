@@ -209,7 +209,6 @@ class App:
         self.feedback_failed = False
         self.rating = tk.IntVar(value=0)
         self.resolution = tk.StringVar(value="")
-        self.comment = tk.StringVar()
 
         families = set(tkfont.families())
         self.family = next((f for f in ("Atkinson Hyperlegible", "Segoe UI", "Helvetica")
@@ -867,7 +866,6 @@ class App:
         self.voice.stop()
         self.rating.set(0)
         self.resolution.set("")
-        self.comment.set("")
         self.feedback_notice = ""
         self.feedback_failed = False
         self.screen = "feedback"
@@ -916,9 +914,6 @@ class App:
             button.pack()
             self.resolution_cards.append((value,card,button))
         self.refresh_resolution_highlight()
-        self.label(f, tr("comment_optional"), 22).pack(pady=(self.px(14), 0))
-        tk.Entry(f, textvariable=self.comment, width=32, font=self.font(22),
-                 state='disabled' if self.feedback_busy else 'normal').pack()
         # A failed save is the one thing on this screen the patient must notice: it is why they are still here.
         failed = self.feedback_failed and self.feedback_notice
         self.label(f, self.feedback_notice, 20 if failed else 17, bold=bool(failed),
@@ -964,8 +959,8 @@ class App:
     def send_feedback(self):
         if self.feedback_busy or self.request_id in self.feedback_done:
             return
-        rating, answer, comment = self.rating.get(), self.resolution.get(), self.comment.get().strip()
-        if rating not in range(1, 6) or answer not in ('yes', 'no') or len(comment) > 2000:
+        rating, answer = self.rating.get(), self.resolution.get()
+        if rating not in range(1, 6) or answer not in ('yes', 'no'):
             self.feedback_notice = tr("feedback_invalid")
             self.feedback_failed = True
             self.render()
@@ -977,7 +972,7 @@ class App:
         self.render()
         def work():
             try:
-                submit_feedback(rid, rating, answer, comment)
+                submit_feedback(rid, rating, answer)
                 self.voice.q.put((self.feedback_result, (rid, None)))
             except Exception as error:
                 self.voice.q.put((self.feedback_result, (rid, str(error))))

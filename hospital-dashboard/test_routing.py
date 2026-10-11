@@ -72,13 +72,16 @@ class RoutingTests(unittest.TestCase):
   rid=self.spoken('我想要多一張被','yue')
   # Routed to nursing so the automatic call does not fire: this test is the clerk's manual send.
   with patch.object(translation,'to_english',return_value='I want another blanket'),patch.object(decision,'classify',return_value=dict(ROUTED,department='Primary Nurse')):b.process_enrich()
-  result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
-  self.assertEqual(result[0],201);self.assertTrue(result[1]['called']);self.assertEqual(result[1]['phone'],'2200')
+  with patch.object(b.calling,'place_call',return_value=(True,'Twilio call CA1 (queued)')) as dial:
+   result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
+  number=b.phone_book()['Housekeeping & Facilities']['phone']
+  self.assertEqual(result[0],201);self.assertTrue(result[1]['called']);self.assertEqual(result[1]['phone'],number)
+  self.assertEqual(dial.call_args[0][0],number)  # dialled the department's number
   self.assertIsNotNone(self.row(rid)['called'])
   with b.db() as c:
    self.assertEqual(c.execute('SELECT transcript FROM deliveries WHERE request_id=?',(rid,)).fetchone()[0],'I want another blanket')
    events=[e[0] for e in c.execute('SELECT event FROM history WHERE request_id=?',(rid,))]
-  self.assertTrue(any(e.startswith('Call placed to Housekeeping & Facilities (ext 2200') for e in events))
+  self.assertTrue(any(e.startswith('Call to Housekeeping & Facilities: Twilio call CA1') for e in events))
   self.assertEqual(self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Primary Nurse','call':'yes'}).encode())[0],400)
 
  def test_no_call_without_the_clerk_and_never_for_nursing(self):
@@ -90,11 +93,15 @@ class RoutingTests(unittest.TestCase):
   self.assertIsNone(r['called'])
   with b.db() as c:self.assertIsNone(c.execute('SELECT 1 FROM deliveries WHERE request_id=?',(rid,)).fetchone())
   # The clerk's click places the call for an out-of-department team.
-  result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
-  self.assertEqual(result[0],201);self.assertTrue(result[1]['called']);self.assertEqual(result[1]['phone'],'2200')
+  with patch.object(b.calling,'place_call',return_value=(True,'Twilio call CA1 (queued)')) as dial:
+   result=self.post(f'/api/requests/{rid}/dispatch',json.dumps({'department':'Housekeeping & Facilities','call':True}).encode())
+  self.assertEqual(result[0],201);self.assertTrue(result[1]['called'])
+  self.assertEqual(result[1]['phone'],b.phone_book()['Housekeeping & Facilities']['phone'])
   # Nursing is never dialled, even when a client asks for a call.
   nurse=self.spoken('I need help getting to the bathroom')
-  result=self.post(f'/api/requests/{nurse}/dispatch',json.dumps({'department':'Primary Nurse','call':True}).encode())
+  with patch.object(b.calling,'place_call') as dial:
+   result=self.post(f'/api/requests/{nurse}/dispatch',json.dumps({'department':'Primary Nurse','call':True}).encode())
+  dial.assert_not_called()
   self.assertEqual(result[0],201);self.assertFalse(result[1]['called']);self.assertIsNone(self.row(nurse)['called'])
 
  def test_staff_done_resolves_every_open_request_for_the_bed(self):

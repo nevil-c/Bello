@@ -18,6 +18,7 @@ import threading
 from local_stt import load_model, transcribe, translate_to_english
 import admin_stats
 import aws_sync
+import calling
 import decision
 import translation
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -386,12 +387,17 @@ class Handler(BaseHTTPRequestHandler):
             # Only the clerk places a call, and only for the departments that are not nursing:
             # nothing here is dialled automatically, however the request was routed.
             call=call and team not in NO_CALL
-            if call:
-                # Placeholder for the automated phone call; nothing is dialled yet.
-                c.execute('UPDATE requests SET called=? WHERE id=?',(now,rid))
-                event(c,rid,f"Call placed to {team} ({'ext '+extension if extension else 'no number configured'}; stub, no call made)")
+        # Dial outside the transaction: a network round trip must not hold the database write lock.
+        placed=False;failure=None
+        if call:
+            placed,detail=calling.place_call(extension,calling.twiml(rid,r['room'],team))
+            failure=None if placed else detail
+            with db() as c:
+                c.execute('BEGIN IMMEDIATE')
+                if placed:c.execute('UPDATE requests SET called=? WHERE id=?',(now,rid))
+                event(c,rid,f'Call to {team}: {detail}')
         changed()
-        return self.send(201,{'delivery_id':did,'department':team,'status':'Delivered to queue','called':call,'phone':extension})
+        return self.send(201,{'delivery_id':did,'department':team,'status':'Delivered to queue','called':placed,'phone':extension,'call_error':failure})
 
 def load_optional(name,load):
     try:load();print(f'{name}: loaded',flush=True)

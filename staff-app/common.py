@@ -37,6 +37,7 @@ COUNT_BG, COUNT_INK, COUNT_EDGE = '#f8fbff', '#284e76', '#b9cadb'
 CRITICAL_BG, CRITICAL_EDGE = '#fff4f3', '#b64343'
 FLAG_BG, FLAG_INK = '#fff0d2', '#815211'
 CALL_BG, CALL_EDGE = '#285d8d', '#204c74'
+LIVE_BG, LIVE_EDGE = '#b64343', '#8f3232'   # a talk button that is being held: the mic is live
 DISPATCH_BG, DISPATCH_EDGE, DISPATCH_INK = '#eef4fa', '#9bb5ce', '#234f79'
 DIALOG_HEAD = '#eef3f9'
 BADGES = {'urgent': ('#fce9e8', '#ac3836'), 'high': ('#fff1dd', '#98631e'),
@@ -115,6 +116,40 @@ class Button(tk.Frame):
 
 def button(parent, text, command, f, kind='call'):
     return Button(parent, text, command, f, kind)
+
+class HoldToSpeak(Button):
+    """Press and hold to talk to the room: blue and idle, red and ticking while the pointer is down.
+
+    ponytail: the press is only shown; no audio is opened. Hand `on_hold` the room calling service
+    when there is one, and pass the press/release to it instead."""
+    IDLE, LIVE = 'Hold to speak', '●  Speaking…'
+
+    def __init__(self, parent, f, on_hold=None):
+        super().__init__(parent, self.IDLE, None, f, 'call')
+        self.on_hold, self.holding = on_hold, False
+        self.button.bind('<ButtonPress-1>', self.press)
+        self.button.bind('<ButtonRelease-1>', self.release)
+        # A handset dropped mid-call ends it, so leaving the button while held does too.
+        self.button.bind('<Leave>', self.release)
+
+    def press(self, _=None):
+        if self.holding or self.button.cget('state') == 'disabled':
+            return
+        self.holding = True
+        self.button.configure(text=self.LIVE, bg=LIVE_BG, activebackground=LIVE_EDGE, fg='white')
+        if self.on_hold:
+            self.on_hold(True)
+
+    def release(self, _=None):
+        if not self.holding:
+            return
+        self.holding = False
+        self.button.configure(text=self.IDLE, bg=CALL_BG, activebackground=CALL_EDGE, fg='white')
+        if self.on_hold:
+            self.on_hold(False)
+
+def hold_to_speak(parent, f, on_hold=None):
+    return HoldToSpeak(parent, f, on_hold)
 
 def pill(parent, text, f, bg=FLAG_BG, fg=FLAG_INK, size=8):
     return tk.Label(parent, text=text, bg=bg, fg=fg, font=f(size), padx=6, pady=2)

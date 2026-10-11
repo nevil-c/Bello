@@ -13,7 +13,7 @@ Pi: nurse_call.py → voice_client ──Bluetooth LE──▶ MacBook: relay.py
 - **Audio:** recordings go Opus-compressed, about 3 KB per second of speech instead of 32.
 - **Live partial text:** off in this mode. The patient sees "Processing your recording", then the transcript.
 
-**Demo only: the Bluetooth link is not encrypted.** Anyone within range running this protocol could read or send requests. Add encryption before real patient data goes over it.
+**The Bluetooth link is not encrypted.** Anyone within range running this protocol could read or send requests. Add encryption before real patient data goes over it.
 
 ## MacBook Air (server)
 

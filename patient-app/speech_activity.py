@@ -9,6 +9,8 @@ class SpeechActivity:
         self.min_rms=float(os.environ.get("BELLO_MIN_SPEECH_RMS","450")) if min_rms is None else min_rms
         self.speech=False
         self.rms=0.0
+        self.votes=0       # kept so the screen and mic_check.py can show which gate refused a block
+        self.tonal=False
         self.elapsed=0.0
         self.last_speech=None
         self.recent=deque(maxlen=3)
@@ -26,8 +28,10 @@ class SpeechActivity:
         total=spectrum.sum()
         tonal=total>0 and np.partition(spectrum,-3)[-3:].sum()/total>.92
         self.rms=float(np.sqrt(np.mean(samples*samples)))
+        self.votes=sum(votes)
+        self.tonal=tonal
         threshold=max(self.min_rms,self.voice_level*.30)
-        speech=sum(votes)>=4 and not tonal and self.rms>=threshold
+        speech=self.votes>=4 and not tonal and self.rms>=threshold
         self.speech=speech
         self.recent.append(speech)
         if speech and sum(self.recent)>=2:

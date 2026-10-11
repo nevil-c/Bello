@@ -124,7 +124,7 @@ class WindowTests(unittest.TestCase):
         end = time.monotonic() + 2
         while not posted and time.monotonic() < end:self.root.update()
         self.assertEqual(posted, [('/api/requests/1/dispatch', {'department': 'Food Services', 'call': True})])
-        app.open_detail(1, call=True); self.pump()
+        app.open_detail(1); self.pump()
         self.assertIn('Cantonese (original)', app.detail.original.cget('text'))
         self.assertTrue(app.detail.preview.winfo_ismapped())
 
@@ -153,6 +153,20 @@ class WindowTests(unittest.TestCase):
         body.destroy()
         self.assertTrue(before)
         self.assertFalse(app.detail.bind('<MouseWheel>'))
+
+    def test_talk_buttons_hold(self):
+        app = clerk.Clerk(self.root, None, live=False); app.names = {'yue': 'Cantonese'}
+        app.requests = [request()]; app.render(); self.pump()
+        talk = app.rows[1].talk
+        self.assertEqual(talk.button.cget('text'), 'Hold to speak')
+        talk.press(); self.assertEqual(talk.button.cget('text'), '●  Speaking…')
+        talk.release(); self.assertEqual(talk.button.cget('text'), 'Hold to speak')
+        app.open_detail(1); self.pump()
+        self.assertIn('hold the button', app.detail.preview_text.cget('text'))
+        app.detail.talk.press(); self.pump()
+        self.assertIn('Speaking with room 412 · B', app.detail.preview_text.cget('text'))
+        app.detail.talk.release(); self.pump()
+        self.assertIn('Call ended', app.detail.preview_text.cget('text'))
 
     def test_inbox_cards(self):
         app = inbox.Inbox(self.root, None, refresh=False)

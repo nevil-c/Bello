@@ -65,7 +65,7 @@ Every `/api/` call needs the `X-Bello-Token` header.
 | `GET /api/requests/{id}` | State and original transcript, polled by the bedside unit |
 | `GET /api/requests` | Every request with its translation, routing and timings |
 | `GET /api/stream` | The same list as server-sent events, pushed on every change (the clerk app falls back to polling if the stream keeps failing) |
-| `POST /api/requests/{id}/dispatch` | `{department, call}`: deliver to a department inbox; `call: true` also logs the department call (placeholder) |
+| `POST /api/requests/{id}/dispatch` | `{department, call}`: deliver to a department inbox; `call: true` also logs the department call |
 | `POST /api/rooms/resolve` | `{room}`: staff marked the bed's requests done; resolves every open request for that room and bed |
 | `GET /api/rooms/open?room=` | How many requests for the bed are still open |
 | `GET /api/i18n/{language}` | Bedside screen strings |
